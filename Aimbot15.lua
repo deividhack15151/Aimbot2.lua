@@ -405,3 +405,77 @@ function getgenv().Aimbot:ToggleESP()
     end
 end
 
+-- ==========================
+-- GUI PARA ATIVAR/DESATIVAR AIMBOT E ESP
+-- ==========================
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "AimbotGUI"
+ScreenGui.Parent = game.CoreGui
+
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 200, 0, 100)
+Frame.Position = UDim2.new(0, 20, 0, 200)
+Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+Frame.BorderSizePixel = 0
+Frame.Active = true
+Frame.Draggable = true
+Frame.Parent = ScreenGui
+
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 6)
+UICorner.Parent = Frame
+
+-- Botão AIMBOT
+local AimbotButton = Instance.new("TextButton")
+AimbotButton.Size = UDim2.new(1, -20, 0, 40)
+AimbotButton.Position = UDim2.new(0, 10, 0, 10)
+AimbotButton.Text = "Aimbot: ON"
+AimbotButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+AimbotButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+AimbotButton.Font = Enum.Font.SourceSansBold
+AimbotButton.TextSize = 18
+AimbotButton.Parent = Frame
+
+local corner1 = Instance.new("UICorner")
+corner1.CornerRadius = UDim.new(0, 4)
+corner1.Parent = AimbotButton
+
+-- Botão ESP
+local ESPButton = Instance.new("TextButton")
+ESPButton.Size = UDim2.new(1, -20, 0, 40)
+ESPButton.Position = UDim2.new(0, 10, 0, 50)
+ESPButton.Text = "ESP: ON"
+ESPButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+ESPButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ESPButton.Font = Enum.Font.SourceSansBold
+ESPButton.TextSize = 18
+ESPButton.Parent = Frame
+
+local corner2 = Instance.new("UICorner")
+corner2.CornerRadius = UDim.new(0, 4)
+corner2.Parent = ESPButton
+
+-- Funções dos botões
+AimbotButton.MouseButton1Click:Connect(function()
+    getgenv().Aimbot:Toggle()
+    if getgenv().Aimbot.Settings.Enabled then
+        AimbotButton.Text = "Aimbot: ON"
+        AimbotButton.BackgroundColor3 = Color3.fromRGB(40, 120, 40)
+    else
+        AimbotButton.Text = "Aimbot: OFF"
+        AimbotButton.BackgroundColor3 = Color3.fromRGB(120, 40, 40)
+    end
+end)
+
+ESPButton.MouseButton1Click:Connect(function()
+    getgenv().Aimbot:ToggleESP()
+    if getgenv().Aimbot.Settings.ESPEnabled then
+        ESPButton.Text = "ESP: ON"
+        ESPButton.BackgroundColor3 = Color3.fromRGB(40, 120, 40)
+    else
+        ESPButton.Text = "ESP: OFF"
+        ESPButton.BackgroundColor3 = Color3.fromRGB(120, 40, 40)
+    end
+end)
+
