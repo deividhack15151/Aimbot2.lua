@@ -1,5 +1,5 @@
 --==================================
--- AIMBOT V3 - GUI + OTIMIZAÇÕES
+-- AIMBOT V3 - GUI + MELHORIAS
 --==================================
 
 if game:GetService("StarterGui") then
@@ -14,6 +14,7 @@ end
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local HttpService = game:GetService("HttpService")
 local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
@@ -24,13 +25,14 @@ local Mouse = LocalPlayer:GetMouse()
 getgenv().Aimbot = {
     Enabled = true,
     TeamCheck = false,
-    WallCheck = false,
+    WallCheck = true,
     AliveCheck = true,
     LockPart = "Head",
     TriggerKey = Enum.UserInputType.MouseButton2,
     Toggle = false,
     AimSpeed = 0.2,
     Priority = "FOV", -- "FOV" ou "Distância"
+    MaxDistance = 150,
     FOV = {
         Radius = 90,
         Color = Color3.fromRGB(255, 255, 255),
@@ -44,7 +46,7 @@ getgenv().Aimbot = {
 -- Carregar configurações salvas
 local configFile = "aimbot_config.json"
 if readfile and isfile and isfile(configFile) then
-    local data = game:GetService("HttpService"):JSONDecode(readfile(configFile))
+    local data = HttpService:JSONDecode(readfile(configFile))
     for k, v in pairs(data) do getgenv().Aimbot[k] = v end
 end
 
@@ -53,7 +55,7 @@ end
 --==============================
 local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
 local Frame = Instance.new("Frame", ScreenGui)
-Frame.Size = UDim2.new(0, 250, 0, 300)
+Frame.Size = UDim2.new(0, 250, 0, 320)
 Frame.Position = UDim2.new(0.02, 0, 0.2, 0)
 Frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 Frame.Active = true
@@ -65,17 +67,49 @@ title.Text = "Aimbot V3 Config"
 title.TextColor3 = Color3.new(1,1,1)
 title.BackgroundColor3 = Color3.fromRGB(20,20,20)
 
--- Checkbox exemplo: TeamCheck
+-- Checkbox TeamCheck
 local teamCheckButton = Instance.new("TextButton", Frame)
 teamCheckButton.Size = UDim2.new(1, -20, 0, 30)
 teamCheckButton.Position = UDim2.new(0, 10, 0, 40)
-teamCheckButton.Text = "Team Check: OFF"
+teamCheckButton.Text = "Team Check: " .. (getgenv().Aimbot.TeamCheck and "ON" or "OFF")
 teamCheckButton.MouseButton1Click:Connect(function()
     getgenv().Aimbot.TeamCheck = not getgenv().Aimbot.TeamCheck
     teamCheckButton.Text = "Team Check: " .. (getgenv().Aimbot.TeamCheck and "ON" or "OFF")
 end)
 
--- (Adicione sliders, dropdowns e outras configs aqui...)
+-- Checkbox WallCheck
+local wallCheckButton = Instance.new("TextButton", Frame)
+wallCheckButton.Size = UDim2.new(1, -20, 0, 30)
+wallCheckButton.Position = UDim2.new(0, 10, 0, 80)
+wallCheckButton.Text = "Wall Check: " .. (getgenv().Aimbot.WallCheck and "ON" or "OFF")
+wallCheckButton.MouseButton1Click:Connect(function()
+    getgenv().Aimbot.WallCheck = not getgenv().Aimbot.WallCheck
+    wallCheckButton.Text = "Wall Check: " .. (getgenv().Aimbot.WallCheck and "ON" or "OFF")
+end)
+
+-- Distância máxima (slider simples)
+local distanceBox = Instance.new("TextBox", Frame)
+distanceBox.Size = UDim2.new(1, -20, 0, 30)
+distanceBox.Position = UDim2.new(0, 10, 0, 120)
+distanceBox.PlaceholderText = "Max Distance (" .. getgenv().Aimbot.MaxDistance .. ")"
+distanceBox.Text = ""
+distanceBox.FocusLost:Connect(function()
+    local val = tonumber(distanceBox.Text)
+    if val then
+        getgenv().Aimbot.MaxDistance = val
+        distanceBox.PlaceholderText = "Max Distance (" .. val .. ")"
+    end
+end)
+
+-- Prioridade dropdown
+local priorityButton = Instance.new("TextButton", Frame)
+priorityButton.Size = UDim2.new(1, -20, 0, 30)
+priorityButton.Position = UDim2.new(0, 10, 0, 160)
+priorityButton.Text = "Prioridade: " .. getgenv().Aimbot.Priority
+priorityButton.MouseButton1Click:Connect(function()
+    getgenv().Aimbot.Priority = getgenv().Aimbot.Priority == "FOV" and "Distância" or "FOV"
+    priorityButton.Text = "Prioridade: " .. getgenv().Aimbot.Priority
+end)
 
 --==============================
 -- DESENHO DO FOV
@@ -100,11 +134,12 @@ end
 
 local function isVisible(part)
     local origin = Camera.CFrame.Position
-    local direction = (part.Position - origin).Unit * 1000
+    local direction = (part.Position - origin)
+    
     local raycastParams = RaycastParams.new()
     raycastParams.FilterDescendantsInstances = {LocalPlayer.Character}
     raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
-
+    
     local result = workspace:Raycast(origin, direction, raycastParams)
     return (not result) or result.Instance:IsDescendantOf(part.Parent)
 end
@@ -120,20 +155,16 @@ local function getClosestTarget()
 
             local part = player.Character and player.Character:FindFirstChild(getgenv().Aimbot.LockPart)
             if part then
-                local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
-                if onScreen then
-                    local dist = (Vector2.new(Mouse.X, Mouse.Y) - Vector2.new(screenPos.X, screenPos.Y)).Magnitude
-                    if dist <= getgenv().Aimbot.FOV.Radius then
-                        if not getgenv().Aimbot.WallCheck or isVisible(part) then
-                            if getgenv().Aimbot.Priority == "FOV" then
-                                if dist < shortest then
-                                    shortest = dist
-                                    closest = player
-                                end
-                            else
-                                local distance3D = (part.Position - Camera.CFrame.Position).Magnitude
-                                if distance3D < shortest then
-                                    shortest = distance3D
+                local distance3D = (part.Position - Camera.CFrame.Position).Magnitude
+                if distance3D <= getgenv().Aimbot.MaxDistance then
+                    local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
+                    if onScreen then
+                        local distFOV = (Vector2.new(Mouse.X, Mouse.Y) - Vector2.new(screenPos.X, screenPos.Y)).Magnitude
+                        if distFOV <= getgenv().Aimbot.FOV.Radius then
+                            if not getgenv().Aimbot.WallCheck or isVisible(part) then
+                                local value = getgenv().Aimbot.Priority == "FOV" and distFOV or distance3D
+                                if value < shortest then
+                                    shortest = value
                                     closest = player
                                 end
                             end
@@ -204,6 +235,6 @@ end)
 -- Salvar configurações ao fechar
 game:BindToClose(function()
     if writefile then
-        writefile(configFile, game:GetService("HttpService"):JSONEncode(getgenv().Aimbot))
+        writefile(configFile, HttpService:JSONEncode(getgenv().Aimbot))
     end
 end)
