@@ -14,9 +14,10 @@ getgenv().Aimbot.Settings = {
     Sensitivity = 0,
     ThirdPerson = false,
     ThirdPersonSensitivity = 3,
-    TriggerKey = "MouseButton2",
+    TriggerKey = "MouseButton2", -- botão de ativação
     Toggle = false,
-    LockPart = "Head"
+    LockPart = "Head",
+    Mode = "shot" -- "shot" = só atira, "hold" = segurar botão, "always" = sempre ativo
 }
 
 getgenv().Aimbot.FOVSettings = {
@@ -43,43 +44,46 @@ local Camera = game:GetService("Workspace").CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 local CurrentTarget = nil
-local Holding = false -- para quando não é toggle
+local Holding = false
+local Shooting = false
 
 -- ==========================
 -- FUNÇÕES AUXILIARES
 -- ==========================
 
--- Converte a cor (string) para tabela {r,g,b}
+local function notify(title, text)
+    if getgenv().Aimbot.Settings.SendNotifications then
+        pcall(function()
+            game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = title,
+                Text = text,
+                Duration = 3
+            })
+        end)
+    end
+end
+
 local function toColor3(colorString)
     local r, g, b = string.match(colorString, "(%d+),%s*(%d+),%s*(%d+)")
     return Color3.fromRGB(tonumber(r), tonumber(g), tonumber(b))
 end
 
--- Verifica se player está vivo
 local function isAlive(player)
     if not player.Character then return false end
     local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
     return humanoid and humanoid.Health > 0
 end
 
--- Verifica se está na tela
-local function isOnScreen(position)
-    local screenPos, onScreen = Camera:WorldToViewportPoint(position)
-    return onScreen
-end
-
--- Verifica se há parede bloqueando a visão
 local function isVisible(part)
     local ray = Ray.new(Camera.CFrame.Position, (part.Position - Camera.CFrame.Position).Unit * 1000)
-    local hitPart = workspace:FindPartOnRay(ray, LocalPlayer.Character, false, true)
-    return hitPart == part or hitPart == part.Parent
+    local hit = workspace:FindPartOnRay(ray, LocalPlayer.Character, false, true)
+    return hit == part or hit:IsDescendantOf(part.Parent)
 end
 
 -- ==========================
 -- FUNÇÕES PRINCIPAIS
 -- ==========================
 
--- Procura o inimigo mais próximo do mouse dentro do FOV
 local function getClosestPlayer()
     local closestPlayer = nil
     local shortestDistance = math.huge
@@ -111,22 +115,19 @@ local function getClosestPlayer()
     return closestPlayer
 end
 
--- Trava a mira no alvo
 local function aimAt(target)
     if not target.Character then return end
     local part = target.Character:FindFirstChild(getgenv().Aimbot.Settings.LockPart)
     if not part then return end
 
-    local settings = getgenv().Aimbot.Settings
-    local targetPos = part.Position
-
-    if settings.ThirdPerson then
-        -- Move o mouse (terceira pessoa)
-        local screenPos = Camera:WorldToViewportPoint(targetPos)
-        mousemoverel((screenPos.X - Mouse.X) / settings.ThirdPersonSensitivity, (screenPos.Y - Mouse.Y) / settings.ThirdPersonSensitivity)
+    if getgenv().Aimbot.Settings.ThirdPerson then
+        local screenPos = Camera:WorldToViewportPoint(part.Position)
+        mousemoverel(
+            (screenPos.X - Mouse.X) / getgenv().Aimbot.Settings.ThirdPersonSensitivity,
+            (screenPos.Y - Mouse.Y) / getgenv().Aimbot.Settings.ThirdPersonSensitivity
+        )
     else
-        -- Usa CFrame (primeira pessoa)
-        Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetPos)
+        Camera.CFrame = CFrame.new(Camera.CFrame.Position, part.Position)
     end
 end
 
@@ -145,26 +146,47 @@ fovCircle.NumSides = getgenv().Aimbot.FOVSettings.Sides
 local function updateFOVCircle()
     local settings = getgenv().Aimbot.FOVSettings
     fovCircle.Visible = settings.Enabled and settings.Visible
-    fovCircle.Position = Vector2.new(Mouse.X, Mouse.Y + 36) -- ajuste do roblox
+    fovCircle.Position = Vector2.new(Mouse.X, Mouse.Y + 36)
     fovCircle.Radius = settings.Amount
+end
+
+-- ==========================
+-- FUNÇÕES PÚBLICAS
+-- ==========================
+
+function getgenv().Aimbot:Toggle()
+    self.Settings.Enabled = not self.Settings.Enabled
+    notify("Aimbot", self.Settings.Enabled and "Ativado" or "Desativado")
+end
+
+function getgenv().Aimbot:SetLockPart(partName)
+    self.Settings.LockPart = partName
+    notify("Aimbot", "Mira agora em: " .. partName)
+end
+
+function getgenv().Aimbot:SetFOV(amount)
+    self.FOVSettings.Amount = amount
+    notify("Aimbot", "FOV ajustado para: " .. tostring(amount))
+end
+
+function getgenv().Aimbot:SetMode(mode)
+    self.Settings.Mode = mode
+    notify("Aimbot", "Modo alterado para: " .. mode)
 end
 
 -- ==========================
 -- CONTROLES DE TECLA
 -- ==========================
 
-local shooting = false
-
 UserInputService.InputBegan:Connect(function(input)
-    -- Botão para atirar
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        shooting = true
+        Shooting = true
     end
 
-    -- Botão de ativação (ex: botão direito do mouse)
     if input.UserInputType.Name == getgenv().Aimbot.Settings.TriggerKey then
         if getgenv().Aimbot.Settings.Toggle then
             getgenv().Aimbot.Settings.Enabled = not getgenv().Aimbot.Settings.Enabled
+            notify("Aimbot", getgenv().Aimbot.Settings.Enabled and "Ativado" or "Desativado")
         else
             Holding = true
         end
@@ -172,9 +194,8 @@ UserInputService.InputBegan:Connect(function(input)
 end)
 
 UserInputService.InputEnded:Connect(function(input)
-    -- Quando solta o botão de tiro
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        shooting = false
+        Shooting = false
     end
 
     if input.UserInputType.Name == getgenv().Aimbot.Settings.TriggerKey and not getgenv().Aimbot.Settings.Toggle then
@@ -183,14 +204,24 @@ UserInputService.InputEnded:Connect(function(input)
 end)
 
 -- ==========================
--- LOOP PRINCIPAL (Ajustado)
+-- LOOP PRINCIPAL
 -- ==========================
 
 RunService.RenderStepped:Connect(function()
     updateFOVCircle()
 
-    -- Só mira quando atirando ou segurando botão de ativação
-    if (shooting or Holding) and getgenv().Aimbot.Settings.Enabled then
+    local mode = getgenv().Aimbot.Settings.Mode
+
+    local canAim = false
+    if mode == "always" then
+        canAim = getgenv().Aimbot.Settings.Enabled
+    elseif mode == "hold" then
+        canAim = Holding and getgenv().Aimbot.Settings.Enabled
+    elseif mode == "shot" then
+        canAim = Shooting and getgenv().Aimbot.Settings.Enabled
+    end
+
+    if canAim then
         CurrentTarget = getClosestPlayer()
         if CurrentTarget then
             fovCircle.Color = toColor3(getgenv().Aimbot.FOVSettings.LockedColor)
@@ -201,3 +232,4 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
+notify("Aimbot", "Script carregado com sucesso! Use Aimbot:Toggle() para ativar/desativar.")
