@@ -153,7 +153,15 @@ end
 -- CONTROLES DE TECLA
 -- ==========================
 
+local shooting = false
+
 UserInputService.InputBegan:Connect(function(input)
+    -- Botão para atirar
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        shooting = true
+    end
+
+    -- Botão de ativação (ex: botão direito do mouse)
     if input.UserInputType.Name == getgenv().Aimbot.Settings.TriggerKey then
         if getgenv().Aimbot.Settings.Toggle then
             getgenv().Aimbot.Settings.Enabled = not getgenv().Aimbot.Settings.Enabled
@@ -164,19 +172,25 @@ UserInputService.InputBegan:Connect(function(input)
 end)
 
 UserInputService.InputEnded:Connect(function(input)
+    -- Quando solta o botão de tiro
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        shooting = false
+    end
+
     if input.UserInputType.Name == getgenv().Aimbot.Settings.TriggerKey and not getgenv().Aimbot.Settings.Toggle then
         Holding = false
     end
 end)
 
 -- ==========================
--- LOOP PRINCIPAL
+-- LOOP PRINCIPAL (Ajustado)
 -- ==========================
 
 RunService.RenderStepped:Connect(function()
     updateFOVCircle()
 
-    if getgenv().Aimbot.Settings.Enabled or Holding then
+    -- Só mira quando atirando ou segurando botão de ativação
+    if (shooting or Holding) and getgenv().Aimbot.Settings.Enabled then
         CurrentTarget = getClosestPlayer()
         if CurrentTarget then
             fovCircle.Color = toColor3(getgenv().Aimbot.FOVSettings.LockedColor)
@@ -186,3 +200,4 @@ RunService.RenderStepped:Connect(function()
         end
     end
 end)
+
