@@ -233,3 +233,175 @@ RunService.RenderStepped:Connect(function()
 end)
 
 notify("Aimbot", "Script carregado com sucesso! Use Aimbot:Toggle() para ativar/desativar.")
+
+-- ==========================
+-- ESP (WALLHACK) COMPLETO COM TRACERS
+-- ==========================
+
+getgenv().Aimbot.Settings.ESPEnabled = true
+local tracers = {} -- tabela para armazenar as linhas de cada jogador
+
+local function createESP(player)
+    if player.Character and not player.Character:FindFirstChild("AimbotESP") then
+        -- Highlight
+        local highlight = Instance.new("Highlight")
+        highlight.Name = "AimbotESP"
+        highlight.FillTransparency = 0.7
+        highlight.OutlineTransparency = 0
+        highlight.Adornee = player.Character
+        highlight.Parent = player.Character
+
+        -- Cores de aliado/inimigo
+        if player.Team == LocalPlayer.Team then
+            highlight.FillColor = Color3.fromRGB(0, 255, 0)
+            highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+        else
+            highlight.FillColor = Color3.fromRGB(255, 0, 0)
+            highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+        end
+
+        -- Billboard para nome e vida
+        local billboard = Instance.new("BillboardGui")
+        billboard.Name = "AimbotESPInfo"
+        billboard.Adornee = player.Character:FindFirstChild("Head") or player.Character:FindFirstChildWhichIsA("BasePart")
+        billboard.Size = UDim2.new(0, 100, 0, 50)
+        billboard.StudsOffset = Vector3.new(0, 3, 0)
+        billboard.AlwaysOnTop = true
+        billboard.Parent = player.Character
+
+        -- Nome
+        local nameLabel = Instance.new("TextLabel")
+        nameLabel.Size = UDim2.new(1, 0, 0.5, 0)
+        nameLabel.BackgroundTransparency = 1
+        nameLabel.Text = player.Name
+        nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        nameLabel.TextStrokeTransparency = 0
+        nameLabel.Font = Enum.Font.SourceSansBold
+        nameLabel.TextScaled = true
+        nameLabel.Parent = billboard
+
+        -- Barra de vida
+        local healthLabel = Instance.new("TextLabel")
+        healthLabel.Size = UDim2.new(1, 0, 0.5, 0)
+        healthLabel.Position = UDim2.new(0, 0, 0.5, 0)
+        healthLabel.BackgroundTransparency = 1
+        healthLabel.Text = "Vida: 100"
+        healthLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+        healthLabel.TextStrokeTransparency = 0
+        healthLabel.Font = Enum.Font.SourceSansBold
+        healthLabel.TextScaled = true
+        healthLabel.Parent = billboard
+
+        local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid.HealthChanged:Connect(function(health)
+                healthLabel.Text = "Vida: " .. math.floor(health)
+                if health > 50 then
+                    healthLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+                elseif health > 20 then
+                    healthLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
+                else
+                    healthLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+                end
+            end)
+        end
+
+        -- Criação do tracer (linha)
+        local tracer = Drawing.new("Line")
+        tracer.Thickness = 1.5
+        tracer.Transparency = 1
+        tracer.Color = (player.Team == LocalPlayer.Team) and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+        tracers[player] = tracer
+    end
+end
+
+local function removeESP(player)
+    if player.Character and player.Character:FindFirstChild("AimbotESP") then
+        player.Character.AimbotESP:Destroy()
+    end
+    if player.Character and player.Character:FindFirstChild("AimbotESPInfo") then
+        player.Character.AimbotESPInfo:Destroy()
+    end
+    if tracers[player] then
+        tracers[player]:Remove()
+        tracers[player] = nil
+    end
+end
+
+-- Atualiza ESP quando players aparecem/desaparecem
+Players.PlayerAdded:Connect(function(player)
+    player.CharacterAdded:Connect(function()
+        task.wait(1)
+        if getgenv().Aimbot.Settings.ESPEnabled then
+            createESP(player)
+        end
+    end)
+end)
+
+Players.PlayerRemoving:Connect(function(player)
+    removeESP(player)
+end)
+
+-- Ativa ESP nos players existentes
+for _, player in pairs(Players:GetPlayers()) do
+    if player ~= LocalPlayer then
+        if player.Character and getgenv().Aimbot.Settings.ESPEnabled then
+            createESP(player)
+        end
+        player.CharacterAdded:Connect(function()
+            task.wait(1)
+            if getgenv().Aimbot.Settings.ESPEnabled then
+                createESP(player)
+            end
+        end)
+    end
+end
+
+-- Atualiza tracers no loop
+RunService.RenderStepped:Connect(function()
+    if not getgenv().Aimbot.Settings.ESPEnabled then
+        for _, line in pairs(tracers) do
+            line.Visible = false
+        end
+        return
+    end
+
+    for player, line in pairs(tracers) do
+        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local root = player.Character.HumanoidRootPart
+            local pos, onScreen = Camera:WorldToViewportPoint(root.Position)
+            if onScreen then
+                line.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y) -- centro inferior da tela
+                line.To = Vector2.new(pos.X, pos.Y)
+                line.Visible = true
+            else
+                line.Visible = false
+            end
+        else
+            line.Visible = false
+        end
+    end
+end)
+
+-- ==========================
+-- Função para ativar/desativar ESP
+-- ==========================
+function getgenv().Aimbot:ToggleESP()
+    self.Settings.ESPEnabled = not self.Settings.ESPEnabled
+    if not self.Settings.ESPEnabled then
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer then
+                removeESP(player)
+            end
+        end
+        notify("ESP", "ESP desativado!")
+    else
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer then
+                createESP(player)
+            end
+        end
+        notify("ESP", "ESP ativado!")
+    end
+end
+
