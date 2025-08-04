@@ -1,4 +1,8 @@
 -- ==========================
+-- AIMBOT + ESP + GUI
+-- ==========================
+
+-- ==========================
 -- CONFIGURAÇÕES DO AIMBOT
 -- ==========================
 
@@ -14,16 +18,17 @@ getgenv().Aimbot.Settings = {
     Sensitivity = 0,
     ThirdPerson = false,
     ThirdPersonSensitivity = 3,
-    TriggerKey = "MouseButton2", -- botão de ativação
+    TriggerKey = "MouseButton2",
     Toggle = false,
     LockPart = "Head",
-    Mode = "shot" -- "shot" = só atira, "hold" = segurar botão, "always" = sempre ativo
+    Mode = "shot", -- "shot" = só atira, "hold" = segurar botão, "always" = sempre ativo
+    ESPEnabled = true
 }
 
 getgenv().Aimbot.FOVSettings = {
     Enabled = true,
     Visible = true,
-    Amount = 40,
+    Amount = 60, -- FOV menor
     Color = "255, 255, 255",
     LockedColor = "255, 70, 70",
     Transparency = 0.5,
@@ -40,7 +45,6 @@ local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local Camera = game:GetService("Workspace").CurrentCamera
-
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 local CurrentTarget = nil
@@ -81,7 +85,7 @@ local function isVisible(part)
 end
 
 -- ==========================
--- FUNÇÕES PRINCIPAIS
+-- FUNÇÕES PRINCIPAIS (AIMBOT)
 -- ==========================
 
 local function getClosestPlayer()
@@ -151,7 +155,7 @@ local function updateFOVCircle()
 end
 
 -- ==========================
--- FUNÇÕES PÚBLICAS
+-- FUNÇÕES PÚBLICAS (AJUSTES)
 -- ==========================
 
 function getgenv().Aimbot:Toggle()
@@ -204,7 +208,7 @@ UserInputService.InputEnded:Connect(function(input)
 end)
 
 -- ==========================
--- LOOP PRINCIPAL
+-- LOOP PRINCIPAL AIMBOT
 -- ==========================
 
 RunService.RenderStepped:Connect(function()
@@ -232,14 +236,11 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
-notify("Aimbot", "Script carregado com sucesso! Use Aimbot:Toggle() para ativar/desativar.")
-
 -- ==========================
--- ESP (WALLHACK) COMPLETO COM TRACERS
+-- ESP (WALLHACK + TRACERS)
 -- ==========================
 
-getgenv().Aimbot.Settings.ESPEnabled = true
-local tracers = {} -- tabela para armazenar as linhas de cada jogador
+local tracers = {}
 
 local function createESP(player)
     if player.Character and not player.Character:FindFirstChild("AimbotESP") then
@@ -251,7 +252,7 @@ local function createESP(player)
         highlight.Adornee = player.Character
         highlight.Parent = player.Character
 
-        -- Cores de aliado/inimigo
+        -- Cores aliado/inimigo
         if player.Team == LocalPlayer.Team then
             highlight.FillColor = Color3.fromRGB(0, 255, 0)
             highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
@@ -260,7 +261,7 @@ local function createESP(player)
             highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
         end
 
-        -- Billboard para nome e vida
+        -- Billboard (nome e vida)
         local billboard = Instance.new("BillboardGui")
         billboard.Name = "AimbotESPInfo"
         billboard.Adornee = player.Character:FindFirstChild("Head") or player.Character:FindFirstChildWhichIsA("BasePart")
@@ -269,7 +270,6 @@ local function createESP(player)
         billboard.AlwaysOnTop = true
         billboard.Parent = player.Character
 
-        -- Nome
         local nameLabel = Instance.new("TextLabel")
         nameLabel.Size = UDim2.new(1, 0, 0.5, 0)
         nameLabel.BackgroundTransparency = 1
@@ -280,7 +280,6 @@ local function createESP(player)
         nameLabel.TextScaled = true
         nameLabel.Parent = billboard
 
-        -- Barra de vida
         local healthLabel = Instance.new("TextLabel")
         healthLabel.Size = UDim2.new(1, 0, 0.5, 0)
         healthLabel.Position = UDim2.new(0, 0, 0.5, 0)
@@ -306,7 +305,7 @@ local function createESP(player)
             end)
         end
 
-        -- Criação do tracer (linha)
+        -- Tracer (linha)
         local tracer = Drawing.new("Line")
         tracer.Thickness = 1.5
         tracer.Transparency = 1
@@ -328,7 +327,6 @@ local function removeESP(player)
     end
 end
 
--- Atualiza ESP quando players aparecem/desaparecem
 Players.PlayerAdded:Connect(function(player)
     player.CharacterAdded:Connect(function()
         task.wait(1)
@@ -342,7 +340,6 @@ Players.PlayerRemoving:Connect(function(player)
     removeESP(player)
 end)
 
--- Ativa ESP nos players existentes
 for _, player in pairs(Players:GetPlayers()) do
     if player ~= LocalPlayer then
         if player.Character and getgenv().Aimbot.Settings.ESPEnabled then
@@ -357,7 +354,6 @@ for _, player in pairs(Players:GetPlayers()) do
     end
 end
 
--- Atualiza tracers no loop
 RunService.RenderStepped:Connect(function()
     if not getgenv().Aimbot.Settings.ESPEnabled then
         for _, line in pairs(tracers) do
@@ -371,7 +367,7 @@ RunService.RenderStepped:Connect(function()
             local root = player.Character.HumanoidRootPart
             local pos, onScreen = Camera:WorldToViewportPoint(root.Position)
             if onScreen then
-                line.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y) -- centro inferior da tela
+                line.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
                 line.To = Vector2.new(pos.X, pos.Y)
                 line.Visible = true
             else
@@ -383,9 +379,6 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- ==========================
--- Função para ativar/desativar ESP
--- ==========================
 function getgenv().Aimbot:ToggleESP()
     self.Settings.ESPEnabled = not self.Settings.ESPEnabled
     if not self.Settings.ESPEnabled then
@@ -406,7 +399,7 @@ function getgenv().Aimbot:ToggleESP()
 end
 
 -- ==========================
--- GUI PARA ATIVAR/DESATIVAR AIMBOT E ESP
+-- GUI (BOTÕES NA TELA)
 -- ==========================
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -431,7 +424,7 @@ local AimbotButton = Instance.new("TextButton")
 AimbotButton.Size = UDim2.new(1, -20, 0, 40)
 AimbotButton.Position = UDim2.new(0, 10, 0, 10)
 AimbotButton.Text = "Aimbot: ON"
-AimbotButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+AimbotButton.BackgroundColor3 = Color3.fromRGB(40, 120, 40)
 AimbotButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 AimbotButton.Font = Enum.Font.SourceSansBold
 AimbotButton.TextSize = 18
@@ -446,7 +439,7 @@ local ESPButton = Instance.new("TextButton")
 ESPButton.Size = UDim2.new(1, -20, 0, 40)
 ESPButton.Position = UDim2.new(0, 10, 0, 50)
 ESPButton.Text = "ESP: ON"
-ESPButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+ESPButton.BackgroundColor3 = Color3.fromRGB(40, 120, 40)
 ESPButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 ESPButton.Font = Enum.Font.SourceSansBold
 ESPButton.TextSize = 18
@@ -456,7 +449,6 @@ local corner2 = Instance.new("UICorner")
 corner2.CornerRadius = UDim.new(0, 4)
 corner2.Parent = ESPButton
 
--- Funções dos botões
 AimbotButton.MouseButton1Click:Connect(function()
     getgenv().Aimbot:Toggle()
     if getgenv().Aimbot.Settings.Enabled then
@@ -479,3 +471,4 @@ ESPButton.MouseButton1Click:Connect(function()
     end
 end)
 
+notify("Aimbot", "Script carregado com sucesso! GUI ativa.")
