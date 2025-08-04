@@ -1,10 +1,9 @@
 --==================================
--- AIMBOT V2 MELHORADO COM MENU
+-- AIMBOT V2 MELHORADO COM FILTROS AVANÇADOS
 -- Criado por deividhack15151
 -- Atualizado por ChatGPT
 --==================================
 
--- Notificação inicial
 if game:GetService("StarterGui") then
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Aimbot V2",
@@ -13,25 +12,24 @@ if game:GetService("StarterGui") then
     })
 end
 
--- CONFIGURAÇÕES PRINCIPAIS
 getgenv().Aimbot = {}
 getgenv().Aimbot.Settings = {
     SendNotifications = true,
     SaveSettings = true,
     ReloadOnTeleport = true,
     Enabled = true,
-    TeamCheck = false,
+    TeamCheck = false,         -- Agora pode controlar no menu com T
     AliveCheck = true,
-    WallCheck = false,
+    WallCheck = false,         -- Toggle no menu com Y
     Sensitivity = 0,
     ThirdPerson = false,
     ThirdPersonSensitivity = 3,
     TriggerKey = "MouseButton2",
     Toggle = false,
-    LockPart = "Head"
+    LockPart = "Head",
+    MaxDistance = 100          -- Distância máxima para mirar
 }
 
--- CONFIGURAÇÕES DO FOV
 getgenv().Aimbot.FOVSettings = {
     Enabled = true,
     Visible = true,
@@ -53,9 +51,8 @@ local Mouse = LocalPlayer:GetMouse()
 
 local CurrentTarget = nil
 local Holding = false
-local AimSpeed = 0.2 -- Suavização da mira (quanto menor, mais rápido)
+local AimSpeed = 0.2
 
--- Salvar e carregar configurações usando shared (temporário)
 local function SaveSettings()
     if getgenv().Aimbot.Settings.SaveSettings then
         shared.AimbotSettings = getgenv().Aimbot.Settings
@@ -74,20 +71,17 @@ end
 
 LoadSettings()
 
--- Função para converter string RGB para Color3
 local function toColor3(colorString)
     local r,g,b = string.match(colorString, "(%d+),%s*(%d+),%s*(%d+)")
     return Color3.fromRGB(tonumber(r), tonumber(g), tonumber(b))
 end
 
--- Checa se jogador está vivo
 local function isAlive(player)
     if not player.Character then return false end
     local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
     return humanoid and humanoid.Health > 0
 end
 
--- Checa se parte está visível (usando raycast moderno)
 local function isVisible(part)
     local origin = Camera.CFrame.Position
     local direction = (part.Position - origin).Unit * 1000
@@ -102,7 +96,6 @@ local function isVisible(part)
     return false
 end
 
--- Retorna o jogador mais próximo do mouse dentro do FOV configurado
 local function getClosestPlayer()
     local closest = nil
     local shortestDistance = math.huge
@@ -116,6 +109,11 @@ local function getClosestPlayer()
 
                 local part = player.Character and player.Character:FindFirstChild(settings.LockPart)
                 if part then
+                    local distToPlayer = (part.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+                    if distToPlayer > settings.MaxDistance then
+                        goto continue
+                    end
+
                     local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
                     if onScreen then
                         local dist = (Vector2.new(Mouse.X, Mouse.Y) - Vector2.new(screenPos.X, screenPos.Y)).magnitude
@@ -129,11 +127,11 @@ local function getClosestPlayer()
                 end
             end
         end
+        ::continue::
     end
     return closest
 end
 
--- Mira suavemente no alvo usando interpolação
 local function aimAt(target)
     if not target.Character then return end
     local part = target.Character:FindFirstChild(getgenv().Aimbot.Settings.LockPart)
@@ -149,7 +147,6 @@ local function aimAt(target)
     Camera.CFrame = CFrame.new(cameraPos, cameraPos + newLookVector)
 end
 
--- Criar círculo do FOV
 local fovCircle = Drawing.new("Circle")
 fovCircle.Color = toColor3(getgenv().Aimbot.FOVSettings.Color)
 fovCircle.Thickness = getgenv().Aimbot.FOVSettings.Thickness
@@ -158,7 +155,6 @@ fovCircle.NumSides = getgenv().Aimbot.FOVSettings.Sides
 fovCircle.Radius = getgenv().Aimbot.FOVSettings.Amount
 fovCircle.Transparency = getgenv().Aimbot.FOVSettings.Transparency
 
--- Linha para alvo
 local fovLine = Drawing.new("Line")
 fovLine.Color = toColor3(getgenv().Aimbot.FOVSettings.LockedColor)
 fovLine.Thickness = 1
@@ -171,7 +167,6 @@ local function updateFOVCircle()
     fovCircle.Position = Vector2.new(Mouse.X, Mouse.Y + 36)
 end
 
--- Controle de teclas para ativar/desativar o aimbot
 UserInputService.InputBegan:Connect(function(input)
     if input.UserInputType.Name == getgenv().Aimbot.Settings.TriggerKey then
         if getgenv().Aimbot.Settings.Toggle then
@@ -190,7 +185,6 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 
--- Comandos no chat para mudar configurações em tempo real (mantidos por compatibilidade)
 LocalPlayer.Chatted:Connect(function(msg)
     local args = string.split(msg:lower(), " ")
     if args[1] == "!aimbot" then
@@ -212,7 +206,7 @@ end)
 
 local menuVisible = false
 local menuPosition = Vector2.new(100, 100)
-local menuWidth, menuHeight = 220, 130
+local menuWidth, menuHeight = 240, 160
 
 local menuBackground = Drawing.new("Square")
 menuBackground.Color = Color3.fromRGB(20, 20, 20)
@@ -258,11 +252,35 @@ fovText.Visible = false
 fovText.Center = false
 fovText.Outline = true
 
+local teamCheckText = Drawing.new("Text")
+teamCheckText.Text = "TeamCheck: Desligado"
+teamCheckText.Color = Color3.fromRGB(255, 100, 100)
+teamCheckText.Size = 16
+teamCheckText.Position = menuPosition + Vector2.new(10, 105)
+teamCheckText.Visible = false
+teamCheckText.Center = false
+teamCheckText.Outline = true
+
+local wallCheckText = Drawing.new("Text")
+wallCheckText.Text = "WallCheck: Desligado"
+wallCheckText.Color = Color3.fromRGB(255, 100, 100)
+wallCheckText.Size = 16
+wallCheckText.Position = menuPosition + Vector2.new(10, 130)
+wallCheckText.Visible = false
+wallCheckText.Center = false
+wallCheckText.Outline = true
+
 local instructionsText = Drawing.new("Text")
-instructionsText.Text = "M: Mostrar/ocultar menu\nL: Liga/Desliga\nP/N: FOV +/-\nK: Mudar LockPart"
+instructionsText.Text = 
+    "M: Mostrar/ocultar menu\n" ..
+    "L: Liga/Desliga\n" ..
+    "P/N: FOV +/-\n" ..
+    "K: Mudar LockPart\n" ..
+    "T: Toggle TeamCheck\n" ..
+    "Y: Toggle WallCheck"
 instructionsText.Color = Color3.fromRGB(200, 200, 200)
 instructionsText.Size = 12
-instructionsText.Position = menuPosition + Vector2.new(10, 105)
+instructionsText.Position = menuPosition + Vector2.new(10, 150)
 instructionsText.Visible = false
 instructionsText.Center = false
 instructionsText.Outline = true
@@ -272,6 +290,10 @@ local function updateMenuTexts()
     statusText.Color = getgenv().Aimbot.Settings.Enabled and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(255, 100, 100)
     lockPartText.Text = "LockPart: " .. getgenv().Aimbot.Settings.LockPart
     fovText.Text = "FOV: " .. tostring(getgenv().Aimbot.FOVSettings.Amount)
+    teamCheckText.Text = "TeamCheck: " .. (getgenv().Aimbot.Settings.TeamCheck and "Ligado" or "Desligado")
+    teamCheckText.Color = getgenv().Aimbot.Settings.TeamCheck and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(255, 100, 100)
+    wallCheckText.Text = "WallCheck: " .. (getgenv().Aimbot.Settings.WallCheck and "Ligado" or "Desligado")
+    wallCheckText.Color = getgenv().Aimbot.Settings.WallCheck and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(255, 100, 100)
 end
 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
@@ -284,6 +306,8 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
         statusText.Visible = menuVisible
         lockPartText.Visible = menuVisible
         fovText.Visible = menuVisible
+        teamCheckText.Visible = menuVisible
+        wallCheckText.Visible = menuVisible
         instructionsText.Visible = menuVisible
         updateMenuTexts()
     end
@@ -311,10 +335,17 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
         getgenv().Aimbot.Settings.LockPart = parts[idx]
         updateMenuTexts()
         SaveSettings()
+    elseif input.KeyCode == Enum.KeyCode.T then
+        getgenv().Aimbot.Settings.TeamCheck = not getgenv().Aimbot.Settings.TeamCheck
+        updateMenuTexts()
+        SaveSettings()
+    elseif input.KeyCode == Enum.KeyCode.Y then
+        getgenv().Aimbot.Settings.WallCheck = not getgenv().Aimbot.Settings.WallCheck
+        updateMenuTexts()
+        SaveSettings()
     end
 end)
 
--- Loop principal
 RunService.RenderStepped:Connect(function()
     updateFOVCircle()
 
@@ -347,7 +378,6 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Mensagem final
 if game:GetService("StarterGui") then
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Aimbot V2",
