@@ -381,4 +381,5 @@ RunService.RenderStepped:Connect(function()
         end
     end
 end)
+game:BindToClose(function()
 
