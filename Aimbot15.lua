@@ -1,5 +1,5 @@
 --==================================
--- AIMBOT V3 - GUI + MELHORIAS
+-- AIMBOT V3 - GUI + MELHORIAS + WALLHACK BASICO
 --==================================
 
 if game:GetService("StarterGui") then
@@ -24,14 +24,14 @@ local Mouse = LocalPlayer:GetMouse()
 --==============================
 getgenv().Aimbot = {
     Enabled = true,
-    TeamCheck = true, -- Ativado por padrão
+    TeamCheck = true,
     WallCheck = true,
     AliveCheck = true,
     LockPart = "Head",
     TriggerKey = Enum.UserInputType.MouseButton2,
     Toggle = false,
     AimSpeed = 0.2,
-    Priority = "FOV", -- "FOV" ou "Distância"
+    Priority = "FOV",
     MaxDistance = 150,
     FOV = {
         Radius = 90,
@@ -40,7 +40,8 @@ getgenv().Aimbot = {
         Thickness = 1,
         Filled = false,
         Visible = true
-    }
+    },
+    WallhackEnabled = false -- NOVO: Wallhack começa desligado
 }
 
 -- Carregar configurações salvas
@@ -55,7 +56,7 @@ end
 --==============================
 local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
 local Frame = Instance.new("Frame", ScreenGui)
-Frame.Size = UDim2.new(0, 250, 0, 320)
+Frame.Size = UDim2.new(0, 250, 0, 360) -- aumentei altura para botao wallhack
 Frame.Position = UDim2.new(0.02, 0, 0.2, 0)
 Frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 Frame.Active = true
@@ -109,6 +110,16 @@ priorityButton.Text = "Prioridade: " .. getgenv().Aimbot.Priority
 priorityButton.MouseButton1Click:Connect(function()
     getgenv().Aimbot.Priority = getgenv().Aimbot.Priority == "FOV" and "Distância" or "FOV"
     priorityButton.Text = "Prioridade: " .. getgenv().Aimbot.Priority
+end)
+
+-- NOVO: Botão Wallhack
+local wallhackButton = Instance.new("TextButton", Frame)
+wallhackButton.Size = UDim2.new(1, -20, 0, 30)
+wallhackButton.Position = UDim2.new(0, 10, 0, 200)
+wallhackButton.Text = "Wallhack: OFF"
+wallhackButton.MouseButton1Click:Connect(function()
+    getgenv().Aimbot.WallhackEnabled = not getgenv().Aimbot.WallhackEnabled
+    wallhackButton.Text = "Wallhack: " .. (getgenv().Aimbot.WallhackEnabled and "ON" or "OFF")
 end)
 
 --==============================
@@ -202,6 +213,30 @@ local function aimAt(target)
 end
 
 --==============================
+-- WALLHACK BASICO
+--==============================
+local wallhackObjects = {}
+
+local function createWallhackESP(player)
+    local esp = {}
+
+    esp.box = Drawing.new("Square")
+    esp.box.Thickness = 2
+    esp.box.Color = Color3.fromRGB(255, 0, 0)
+    esp.box.Filled = false
+    esp.box.Visible = false
+
+    esp.name = Drawing.new("Text")
+    esp.name.Text = player.Name
+    esp.name.Color = Color3.fromRGB(255, 255, 255)
+    esp.name.Size = 14
+    esp.name.Center = true
+    esp.name.Visible = false
+
+    return esp
+end
+
+--==============================
 -- LOOP PRINCIPAL
 --==============================
 local holding = false
@@ -242,6 +277,47 @@ RunService.RenderStepped:Connect(function()
         aimAt(currentTarget)
     else
         fovCircle.Color = getgenv().Aimbot.FOV.Color
+    end
+
+    -- WALLHACK VISUAL
+    if getgenv().Aimbot.WallhackEnabled then
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Character and isAlive(player) then
+                if not wallhackObjects[player] then
+                    wallhackObjects[player] = createWallhackESP(player)
+                end
+
+                local esp = wallhackObjects[player]
+                local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+                if hrp then
+                    local pos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
+                    if onScreen then
+                        local size = 50
+
+                        esp.box.Position = Vector2.new(pos.X - size / 2, pos.Y - size / 2)
+                        esp.box.Size = Vector2.new(size, size)
+                        esp.box.Visible = true
+
+                        esp.name.Position = Vector2.new(pos.X, pos.Y - size / 2 - 15)
+                        esp.name.Visible = true
+                    else
+                        esp.box.Visible = false
+                        esp.name.Visible = false
+                    end
+                else
+                    esp.box.Visible = false
+                    esp.name.Visible = false
+                end
+            elseif wallhackObjects[player] then
+                wallhackObjects[player].box.Visible = false
+                wallhackObjects[player].name.Visible = false
+            end
+        end
+    else
+        for _, esp in pairs(wallhackObjects) do
+            esp.box.Visible = false
+            esp.name.Visible = false
+        end
     end
 end)
 
