@@ -92,6 +92,53 @@ Title.TextSize = 28
 Title.TextStrokeTransparency = 0.8
 Title.TextScaled = true
 
+-- Botão de Minimizar
+local minimizeButton = Instance.new("TextButton", Frame)
+minimizeButton.Size = UDim2.new(0, 30, 0, 30)
+minimizeButton.Position = UDim2.new(1, -70, 0, 5)
+minimizeButton.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+minimizeButton.Text = "-"
+minimizeButton.Font = Enum.Font.GothamBold
+minimizeButton.TextColor3 = Color3.new(1, 1, 1)
+minimizeButton.TextSize = 18
+minimizeButton.BorderSizePixel = 0
+
+-- Botão de Fechar (ocultar GUI)
+local closeButton = Instance.new("TextButton", Frame)
+closeButton.Size = UDim2.new(0, 30, 0, 30)
+closeButton.Position = UDim2.new(1, -35, 0, 5)
+closeButton.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+closeButton.Text = "X"
+closeButton.Font = Enum.Font.GothamBold
+closeButton.TextColor3 = Color3.new(1, 1, 1)
+closeButton.TextSize = 18
+closeButton.BorderSizePixel = 0
+
+-- Minimizar funcionalidade
+local isMinimized = false
+minimizeButton.MouseButton1Click:Connect(function()
+    isMinimized = not isMinimized
+    for _, child in pairs(Frame:GetChildren()) do
+        if child ~= Title and child ~= minimizeButton and child ~= closeButton and child.ClassName ~= "UIListLayout" then
+            child.Visible = not isMinimized
+        end
+    end
+end)
+
+-- Ocultar ao clicar em X
+closeButton.MouseButton1Click:Connect(function()
+    ScreenGui.Enabled = false
+end)
+
+-- Pressionar tecla Insert para mostrar/ocultar GUI
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.Insert then
+        ScreenGui.Enabled = not ScreenGui.Enabled
+    end
+end)
+
+
 -- Função para criar Toggle Button estilizado
 local function createToggle(name, parent, initialValue, positionY)
     local btnFrame = Instance.new("Frame", parent)
