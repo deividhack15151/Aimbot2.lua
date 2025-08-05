@@ -1,5 +1,5 @@
 --==================================
--- AIMBOT V3 - GUI + MELHORIAS + WALLHACK MELHORADO
+-- AIMBOT V3 - GUI + MELHORIAS + WALLHACK LIMITADO 30M
 --==================================
 
 if game:GetService("StarterGui") then
@@ -211,21 +211,19 @@ local function aimAt(target)
 end
 
 --==============================
--- WALLHACK MELHORADO
+-- WALLHACK MELHORADO LIMITADO 30 METROS
 --==============================
 local wallhackObjects = {}
 
 local function createWallhackESP(player)
     local esp = {}
 
-    -- Caixa
     esp.box = Drawing.new("Square")
     esp.box.Thickness = 2
     esp.box.Color = Color3.fromRGB(255, 0, 0)
     esp.box.Filled = false
     esp.box.Visible = false
 
-    -- Nome
     esp.name = Drawing.new("Text")
     esp.name.Text = player.Name
     esp.name.Color = Color3.fromRGB(255, 255, 255)
@@ -233,7 +231,6 @@ local function createWallhackESP(player)
     esp.name.Center = true
     esp.name.Visible = false
 
-    -- Skeleton (6 linhas)
     esp.skeleton = {}
     for i = 1, 6 do
         local line = Drawing.new("Line")
@@ -288,70 +285,84 @@ RunService.RenderStepped:Connect(function()
         fovCircle.Color = getgenv().Aimbot.FOV.Color
     end
 
-    -- WALLHACK VISUAL
     if getgenv().Aimbot.WallhackEnabled then
         for _, player in pairs(Players:GetPlayers()) do
             if player ~= LocalPlayer and player.Character and isAlive(player) and player.Team ~= LocalPlayer.Team then
-                if not wallhackObjects[player] then
-                    wallhackObjects[player] = createWallhackESP(player)
-                end
+                local part = player.Character:FindFirstChild(getgenv().Aimbot.LockPart)
+                if part then
+                    local dist = (part.Position - Camera.CFrame.Position).Magnitude
+                    if dist <= 30 then
+                        if not wallhackObjects[player] then
+                            wallhackObjects[player] = createWallhackESP(player)
+                        end
 
-                local esp = wallhackObjects[player]
-                local char = player.Character
+                        local esp = wallhackObjects[player]
+                        local char = player.Character
 
-                local hrp = char:FindFirstChild("HumanoidRootPart")
-                local head = char:FindFirstChild("Head")
-                local torso = char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso")
+                        local hrp = char:FindFirstChild("HumanoidRootPart")
+                        local head = char:FindFirstChild("Head")
+                        local torso = char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso")
 
-                if hrp and head and torso then
-                    local rootPos, onScreenRoot = Camera:WorldToViewportPoint(hrp.Position)
-                    local headPos, onScreenHead = Camera:WorldToViewportPoint(head.Position)
-                    local torsoPos, onScreenTorso = Camera:WorldToViewportPoint(torso.Position)
+                        if hrp and head and torso then
+                            local rootPos, onScreenRoot = Camera:WorldToViewportPoint(hrp.Position)
+                            local headPos, onScreenHead = Camera:WorldToViewportPoint(head.Position)
+                            local torsoPos, onScreenTorso = Camera:WorldToViewportPoint(torso.Position)
 
-                    if onScreenRoot and onScreenHead and onScreenTorso then
-                        local height = (headPos.Y - rootPos.Y) * -1
-                        local width = height / 2
+                            if onScreenRoot and onScreenHead and onScreenTorso then
+                                local height = (headPos.Y - rootPos.Y) * -1
+                                local width = height / 2
 
-                        esp.box.Position = Vector2.new(rootPos.X - width / 2, rootPos.Y - height)
-                        esp.box.Size = Vector2.new(width, height)
-                        esp.box.Visible = true
+                                esp.box.Position = Vector2.new(rootPos.X - width / 2, rootPos.Y - height)
+                                esp.box.Size = Vector2.new(width, height)
+                                esp.box.Visible = true
 
-                        esp.name.Position = Vector2.new(rootPos.X, rootPos.Y - height - 15)
-                        esp.name.Visible = true
+                                esp.name.Position = Vector2.new(rootPos.X, rootPos.Y - height - 15)
+                                esp.name.Visible = true
 
-                        local joints = {
-                            head,
-                            torso,
-                            char:FindFirstChild("LeftUpperArm"),
-                            char:FindFirstChild("RightUpperArm"),
-                            char:FindFirstChild("LeftUpperLeg"),
-                            char:FindFirstChild("RightUpperLeg"),
-                        }
+                                local joints = {
+                                    head,
+                                    torso,
+                                    char:FindFirstChild("LeftUpperArm"),
+                                    char:FindFirstChild("RightUpperArm"),
+                                    char:FindFirstChild("LeftUpperLeg"),
+                                    char:FindFirstChild("RightUpperLeg"),
+                                }
 
-                        for i, part in ipairs(joints) do
-                            local nextPart = (i == 1) and joints[2] or nil
-                            if part and nextPart then
-                                local p1 = Camera:WorldToViewportPoint(part.Position)
-                                local p2 = Camera:WorldToViewportPoint(nextPart.Position)
-                                esp.skeleton[i].From = Vector2.new(p1.X, p1.Y)
-                                esp.skeleton[i].To = Vector2.new(p2.X, p2.Y)
-                                esp.skeleton[i].Visible = true
+                                for i, part in ipairs(joints) do
+                                    local nextPart = (i == 1) and joints[2] or nil
+                                    if part and nextPart then
+                                        local p1 = Camera:WorldToViewportPoint(part.Position)
+                                        local p2 = Camera:WorldToViewportPoint(nextPart.Position)
+                                        esp.skeleton[i].From = Vector2.new(p1.X, p1.Y)
+                                        esp.skeleton[i].To = Vector2.new(p2.X, p2.Y)
+                                        esp.skeleton[i].Visible = true
+                                    else
+                                        esp.skeleton[i].Visible = false
+                                    end
+                                end
                             else
-                                esp.skeleton[i].Visible = false
+                                esp.box.Visible = false
+                                esp.name.Visible = false
+                                for _, line in ipairs(esp.skeleton) do
+                                    line.Visible = false
+                                end
+                            end
+                        else
+                            esp.box.Visible = false
+                            esp.name.Visible = false
+                            for _, line in ipairs(esp.skeleton) do
+                                line.Visible = false
                             end
                         end
                     else
-                        esp.box.Visible = false
-                        esp.name.Visible = false
-                        for _, line in ipairs(esp.skeleton) do
-                            line.Visible = false
+                        if wallhackObjects[player] then
+                            local esp = wallhackObjects[player]
+                            esp.box.Visible = false
+                            esp.name.Visible = false
+                            for _, line in ipairs(esp.skeleton) do
+                                line.Visible = false
+                            end
                         end
-                    end
-                else
-                    esp.box.Visible = false
-                    esp.name.Visible = false
-                    for _, line in ipairs(esp.skeleton) do
-                        line.Visible = false
                     end
                 end
             elseif wallhackObjects[player] then
