@@ -4,7 +4,7 @@
 
 if game:GetService("StarterGui") then
     game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Aimbot V3",
+        Title = "DOGAO_RIP V3",
         Text = "Script carregado com sucesso!",
         Duration = 5
     })
@@ -64,7 +64,7 @@ Frame.Draggable = true
 
 local title = Instance.new("TextLabel", Frame)
 title.Size = UDim2.new(1, 0, 0, 30)
-title.Text = "Aimbot V3 Config"
+title.Text = "Dogao_RIP MENU"
 title.TextColor3 = Color3.new(1,1,1)
 title.BackgroundColor3 = Color3.fromRGB(20,20,20)
 
@@ -80,7 +80,7 @@ end)
 
 -- WallCheck
 local wallCheckButton = Instance.new("TextButton", Frame)
-wallCheckButton.Size = UDim2.new(1, -20, 0, 30)
+wallCheckButton.Size = UDim2.new(1, -20, 0, 200)
 wallCheckButton.Position = UDim2.new(0, 10, 0, 80)
 wallCheckButton.Text = "Wall Check: " .. (getgenv().Aimbot.WallCheck and "ON" or "OFF")
 wallCheckButton.MouseButton1Click:Connect(function()
