@@ -1,5 +1,5 @@
 --==================================
--- AIMBOT V3 - GUI + MELHORIAS + WALLHACK BASICO
+-- AIMBOT V3 - GUI + MELHORIAS + WALLHACK MELHORADO
 --==================================
 
 if game:GetService("StarterGui") then
@@ -41,7 +41,7 @@ getgenv().Aimbot = {
         Filled = false,
         Visible = true
     },
-    WallhackEnabled = false -- NOVO: Wallhack começa desligado
+    WallhackEnabled = false
 }
 
 -- Carregar configurações salvas
@@ -56,7 +56,7 @@ end
 --==============================
 local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
 local Frame = Instance.new("Frame", ScreenGui)
-Frame.Size = UDim2.new(0, 250, 0, 360) -- aumentei altura para botao wallhack
+Frame.Size = UDim2.new(0, 250, 0, 360)
 Frame.Position = UDim2.new(0.02, 0, 0.2, 0)
 Frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 Frame.Active = true
@@ -68,7 +68,7 @@ title.Text = "Aimbot V3 Config"
 title.TextColor3 = Color3.new(1,1,1)
 title.BackgroundColor3 = Color3.fromRGB(20,20,20)
 
--- Checkbox TeamCheck
+-- TeamCheck
 local teamCheckButton = Instance.new("TextButton", Frame)
 teamCheckButton.Size = UDim2.new(1, -20, 0, 30)
 teamCheckButton.Position = UDim2.new(0, 10, 0, 40)
@@ -78,7 +78,7 @@ teamCheckButton.MouseButton1Click:Connect(function()
     teamCheckButton.Text = "Team Check: " .. (getgenv().Aimbot.TeamCheck and "ON" or "OFF")
 end)
 
--- Checkbox WallCheck
+-- WallCheck
 local wallCheckButton = Instance.new("TextButton", Frame)
 wallCheckButton.Size = UDim2.new(1, -20, 0, 30)
 wallCheckButton.Position = UDim2.new(0, 10, 0, 80)
@@ -88,7 +88,7 @@ wallCheckButton.MouseButton1Click:Connect(function()
     wallCheckButton.Text = "Wall Check: " .. (getgenv().Aimbot.WallCheck and "ON" or "OFF")
 end)
 
--- Distância máxima (slider simples)
+-- Max Distance
 local distanceBox = Instance.new("TextBox", Frame)
 distanceBox.Size = UDim2.new(1, -20, 0, 30)
 distanceBox.Position = UDim2.new(0, 10, 0, 120)
@@ -102,7 +102,7 @@ distanceBox.FocusLost:Connect(function()
     end
 end)
 
--- Prioridade dropdown
+-- Priority
 local priorityButton = Instance.new("TextButton", Frame)
 priorityButton.Size = UDim2.new(1, -20, 0, 30)
 priorityButton.Position = UDim2.new(0, 10, 0, 160)
@@ -112,7 +112,7 @@ priorityButton.MouseButton1Click:Connect(function()
     priorityButton.Text = "Prioridade: " .. getgenv().Aimbot.Priority
 end)
 
--- NOVO: Botão Wallhack
+-- Wallhack toggle
 local wallhackButton = Instance.new("TextButton", Frame)
 wallhackButton.Size = UDim2.new(1, -20, 0, 30)
 wallhackButton.Position = UDim2.new(0, 10, 0, 200)
@@ -123,7 +123,7 @@ wallhackButton.MouseButton1Click:Connect(function()
 end)
 
 --==============================
--- DESENHO DO FOV
+-- FOV CIRCLE
 --==============================
 local fovCircle = Drawing.new("Circle")
 fovCircle.Thickness = getgenv().Aimbot.FOV.Thickness
@@ -131,7 +131,7 @@ fovCircle.Filled = getgenv().Aimbot.FOV.Filled
 fovCircle.Radius = getgenv().Aimbot.FOV.Radius
 
 local function updateFOV()
-    fovCircle.Position = Camera.ViewportSize / 2 -- Mira centralizada
+    fovCircle.Position = Camera.ViewportSize / 2
     fovCircle.Visible = getgenv().Aimbot.FOV.Visible
 end
 
@@ -143,7 +143,6 @@ local function isAlive(player)
     return humanoid and humanoid.Health > 0
 end
 
--- WallCheck aprimorado
 local function isVisible(part)
     local origin = Camera.CFrame.Position
     local direction = (part.Position - origin)
@@ -167,7 +166,6 @@ local function isVisible(part)
     return (not result) or result.Instance:IsDescendantOf(part.Parent)
 end
 
--- Busca o jogador mais próximo
 local function getClosestTarget()
     local closest = nil
     local shortest = math.huge
@@ -213,25 +211,37 @@ local function aimAt(target)
 end
 
 --==============================
--- WALLHACK BASICO
+-- WALLHACK MELHORADO
 --==============================
 local wallhackObjects = {}
 
 local function createWallhackESP(player)
     local esp = {}
 
+    -- Caixa
     esp.box = Drawing.new("Square")
     esp.box.Thickness = 2
     esp.box.Color = Color3.fromRGB(255, 0, 0)
     esp.box.Filled = false
     esp.box.Visible = false
 
+    -- Nome
     esp.name = Drawing.new("Text")
     esp.name.Text = player.Name
     esp.name.Color = Color3.fromRGB(255, 255, 255)
     esp.name.Size = 14
     esp.name.Center = true
     esp.name.Visible = false
+
+    -- Skeleton (6 linhas)
+    esp.skeleton = {}
+    for i = 1, 6 do
+        local line = Drawing.new("Line")
+        line.Thickness = 1.5
+        line.Color = Color3.fromRGB(255, 0, 0)
+        line.Visible = false
+        esp.skeleton[i] = line
+    end
 
     return esp
 end
@@ -258,7 +268,6 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 
--- Atualização do alvo a cada 0.05s
 task.spawn(function()
     while task.wait(0.05) do
         if getgenv().Aimbot.Enabled or holding then
@@ -282,48 +291,21 @@ RunService.RenderStepped:Connect(function()
     -- WALLHACK VISUAL
     if getgenv().Aimbot.WallhackEnabled then
         for _, player in pairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer and player.Character and isAlive(player) then
+            if player ~= LocalPlayer and player.Character and isAlive(player) and player.Team ~= LocalPlayer.Team then
                 if not wallhackObjects[player] then
                     wallhackObjects[player] = createWallhackESP(player)
                 end
 
                 local esp = wallhackObjects[player]
-                local hrp = player.Character:FindFirstChild("HumanoidRootPart")
-                if hrp then
-                    local pos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
-                    if onScreen then
-                        local size = 50
+                local char = player.Character
 
-                        esp.box.Position = Vector2.new(pos.X - size / 2, pos.Y - size / 2)
-                        esp.box.Size = Vector2.new(size, size)
-                        esp.box.Visible = true
+                local hrp = char:FindFirstChild("HumanoidRootPart")
+                local head = char:FindFirstChild("Head")
+                local torso = char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso")
 
-                        esp.name.Position = Vector2.new(pos.X, pos.Y - size / 2 - 15)
-                        esp.name.Visible = true
-                    else
-                        esp.box.Visible = false
-                        esp.name.Visible = false
-                    end
-                else
-                    esp.box.Visible = false
-                    esp.name.Visible = false
-                end
-            elseif wallhackObjects[player] then
-                wallhackObjects[player].box.Visible = false
-                wallhackObjects[player].name.Visible = false
-            end
-        end
-    else
-        for _, esp in pairs(wallhackObjects) do
-            esp.box.Visible = false
-            esp.name.Visible = false
-        end
-    end
-end)
+                if hrp and head and torso then
+                    local rootPos, onScreenRoot = Camera:WorldToViewportPoint(hrp.Position)
+                    local headPos, onScreenHead = Camera:WorldToViewportPoint(head.Position)
+                    local torsoPos, onScreenTorso = Camera:WorldToViewportPoint(torso.Position)
 
--- Salvar configurações ao fechar
-game:BindToClose(function()
-    if writefile then
-        writefile(configFile, HttpService:JSONEncode(getgenv().Aimbot))
-    end
-end)
+                    if onScreenRoot and onScreenHead and onScreenTorso
