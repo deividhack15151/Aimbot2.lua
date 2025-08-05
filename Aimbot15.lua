@@ -114,8 +114,8 @@ end)
 
 -- Wallhack toggle
 local wallhackButton = Instance.new("TextButton", Frame)
-wallhackButton.Size = UDim2.new(1, -20, 0, 30)
-wallhackButton.Position = UDim2.new(0, 10, 0, 200)
+wallhackButton.Size = UDim2.new(1, -20, 0, 200)
+wallhackButton.Position = UDim2.new(0, 10, 0, 30)
 wallhackButton.Text = "Wallhack: OFF"
 wallhackButton.MouseButton1Click:Connect(function()
     getgenv().Aimbot.WallhackEnabled = not getgenv().Aimbot.WallhackEnabled
