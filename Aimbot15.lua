@@ -55,86 +55,183 @@ end
 --==============================
 -- GUI (Interface)
 --==============================
+
+local UserInputService = game:GetService("UserInputService") -- já estava declarado, mas seguro
+
 local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.Name = "DogaoRipGui"
+
 local Frame = Instance.new("Frame", ScreenGui)
-Frame.Size = UDim2.new(0, 250, 0, 390)
-Frame.Position = UDim2.new(0.02, 0, 0.2, 0)
-Frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+Frame.Size = UDim2.new(0, 300, 0, 400)
+Frame.Position = UDim2.new(0.02, 0, 0.15, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+Frame.BorderSizePixel = 0
+Frame.AnchorPoint = Vector2.new(0, 0)
 Frame.Active = true
 Frame.Draggable = true
 
-local title = Instance.new("TextLabel", Frame)
-title.Size = UDim2.new(1, 0, 0, 30)
-title.Text = "Dogao_RIP MENU"
-title.TextColor3 = Color3.new(1,1,1)
-title.BackgroundColor3 = Color3.fromRGB(20,20,20)
+-- Sombra (shadow effect)
+local Shadow = Instance.new("ImageLabel", Frame)
+Shadow.Size = UDim2.new(1, 10, 1, 10)
+Shadow.Position = UDim2.new(0, -5, 0, -5)
+Shadow.BackgroundTransparency = 1
+Shadow.Image = "rbxassetid://3570695787"
+Shadow.ImageColor3 = Color3.new(0, 0, 0)
+Shadow.ImageTransparency = 0.7
+Shadow.ScaleType = Enum.ScaleType.Slice
+Shadow.SliceCenter = Rect.new(100, 100, 100, 100)
 
--- Wallhack toggle
-local wallhackButton = Instance.new("TextButton", Frame)
-wallhackButton.Size = UDim2.new(1, -20, 0, 30)
-wallhackButton.Position = UDim2.new(0, 10, 0, 30)
-wallhackButton.Text = "Wallhack: OFF"
-wallhackButton.MouseButton1Click:Connect(function()
-    getgenv().Aimbot.WallhackEnabled = not getgenv().Aimbot.WallhackEnabled
-    wallhackButton.Text = "Wallhack: " .. (getgenv().Aimbot.WallhackEnabled and "ON" or "OFF")
-end)
+-- Título
+local Title = Instance.new("TextLabel", Frame)
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.BackgroundTransparency = 1
+Title.Text = "🐶 Dogao RIP V3"
+Title.TextColor3 = Color3.fromRGB(255, 180, 60)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 28
+Title.TextStrokeTransparency = 0.8
+Title.TextScaled = true
 
--- TeamCheck
-local teamCheckButton = Instance.new("TextButton", Frame)
-teamCheckButton.Size = UDim2.new(1, -20, 0, 30)
-teamCheckButton.Position = UDim2.new(0, 10, 0, 70)
-teamCheckButton.Text = "Team Check: " .. (getgenv().Aimbot.TeamCheck and "ON" or "OFF")
-teamCheckButton.MouseButton1Click:Connect(function()
-    getgenv().Aimbot.TeamCheck = not getgenv().Aimbot.TeamCheck
-    teamCheckButton.Text = "Team Check: " .. (getgenv().Aimbot.TeamCheck and "ON" or "OFF")
-end)
+-- Função para criar Toggle Button estilizado
+local function createToggle(name, parent, initialValue, positionY)
+    local btnFrame = Instance.new("Frame", parent)
+    btnFrame.Size = UDim2.new(1, -20, 0, 40)
+    btnFrame.Position = UDim2.new(0, 10, 0, positionY)
+    btnFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+    btnFrame.BorderSizePixel = 0
+    btnFrame.ClipsDescendants = true
 
--- WallCheck
-local wallCheckButton = Instance.new("TextButton", Frame)
-wallCheckButton.Size = UDim2.new(1, -20, 0, 30)
-wallCheckButton.Position = UDim2.new(0, 10, 0, 110)
-wallCheckButton.Text = "Wall Check: " .. (getgenv().Aimbot.WallCheck and "ON" or "OFF")
-wallCheckButton.MouseButton1Click:Connect(function()
-    getgenv().Aimbot.WallCheck = not getgenv().Aimbot.WallCheck
-    wallCheckButton.Text = "Wall Check: " .. (getgenv().Aimbot.WallCheck and "ON" or "OFF")
-end)
+    local label = Instance.new("TextLabel", btnFrame)
+    label.Text = name
+    label.Size = UDim2.new(0.7, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.TextColor3 = Color3.fromRGB(230, 230, 230)
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 18
+    label.TextXAlignment = Enum.TextXAlignment.Left
 
--- Max Distance para Aimbot
-local distanceBox = Instance.new("TextBox", Frame)
-distanceBox.Size = UDim2.new(1, -20, 0, 30)
-distanceBox.Position = UDim2.new(0, 10, 0, 150)
-distanceBox.PlaceholderText = "Max Distance (" .. getgenv().Aimbot.MaxDistance .. ")"
-distanceBox.Text = ""
-distanceBox.FocusLost:Connect(function()
-    local val = tonumber(distanceBox.Text)
-    if val then
-        getgenv().Aimbot.MaxDistance = val
-        distanceBox.PlaceholderText = "Max Distance (" .. val .. ")"
+    local toggleBtn = Instance.new("TextButton", btnFrame)
+    toggleBtn.Size = UDim2.new(0, 50, 0, 30)
+    toggleBtn.Position = UDim2.new(0.75, 0, 0.1, 0)
+    toggleBtn.BackgroundColor3 = initialValue and Color3.fromRGB(100, 220, 100) or Color3.fromRGB(180, 60, 60)
+    toggleBtn.Text = initialValue and "ON" or "OFF"
+    toggleBtn.Font = Enum.Font.GothamBold
+    toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    toggleBtn.TextSize = 16
+    toggleBtn.AutoButtonColor = false
+    toggleBtn.ClipsDescendants = true
+
+    toggleBtn.MouseEnter:Connect(function()
+        toggleBtn.BackgroundColor3 = initialValue and Color3.fromRGB(80, 180, 80) or Color3.fromRGB(150, 40, 40)
+    end)
+    toggleBtn.MouseLeave:Connect(function()
+        toggleBtn.BackgroundColor3 = initialValue and Color3.fromRGB(100, 220, 100) or Color3.fromRGB(180, 60, 60)
+    end)
+
+    local toggled = initialValue
+    toggleBtn.MouseButton1Click:Connect(function()
+        toggled = not toggled
+        toggleBtn.BackgroundColor3 = toggled and Color3.fromRGB(100, 220, 100) or Color3.fromRGB(180, 60, 60)
+        toggleBtn.Text = toggled and "ON" or "OFF"
+        if name == "Wallhack" then
+            getgenv().Aimbot.WallhackEnabled = toggled
+        elseif name == "Team Check" then
+            getgenv().Aimbot.TeamCheck = toggled
+        elseif name == "Wall Check" then
+            getgenv().Aimbot.WallCheck = toggled
+        end
+    end)
+end
+
+-- Função para criar slider para números
+local function createSlider(name, parent, min, max, default, positionY, callback)
+    local sliderFrame = Instance.new("Frame", parent)
+    sliderFrame.Size = UDim2.new(1, -20, 0, 50)
+    sliderFrame.Position = UDim2.new(0, 10, 0, positionY)
+    sliderFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+    sliderFrame.BorderSizePixel = 0
+
+    local label = Instance.new("TextLabel", sliderFrame)
+    label.Text = name .. ": " .. tostring(default)
+    label.Size = UDim2.new(1, 0, 0, 20)
+    label.BackgroundTransparency = 1
+    label.TextColor3 = Color3.fromRGB(220, 220, 220)
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 16
+    label.TextXAlignment = Enum.TextXAlignment.Left
+
+    local slider = Instance.new("Frame", sliderFrame)
+    slider.Size = UDim2.new(1, -20, 0, 10)
+    slider.Position = UDim2.new(0, 10, 0, 30)
+    slider.BackgroundColor3 = Color3.fromRGB(70, 70, 80)
+    slider.BorderSizePixel = 0
+
+    local fill = Instance.new("Frame", slider)
+    fill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+    fill.BackgroundColor3 = Color3.fromRGB(255, 180, 60)
+    fill.BorderSizePixel = 0
+
+    local function updateValue(x)
+        local relativeX = math.clamp(x - slider.AbsolutePosition.X, 0, slider.AbsoluteSize.X)
+        local percent = relativeX / slider.AbsoluteSize.X
+        local value = math.floor(min + percent * (max - min))
+        fill.Size = UDim2.new(percent, 0, 1, 0)
+        label.Text = name .. ": " .. tostring(value)
+        callback(value)
     end
+
+    slider.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            updateValue(input.Position.X)
+            local conn
+            conn = UserInputService.InputChanged:Connect(function(inputMove)
+                if inputMove.UserInputType == Enum.UserInputType.MouseMovement then
+                    updateValue(inputMove.Position.X)
+                end
+            end)
+            UserInputService.InputEnded:Wait()
+            conn:Disconnect()
+        end
+    end)
+
+    slider.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then
+            updateValue(input.Position.X)
+        end
+    end)
+end
+
+-- Criar toggles
+createToggle("Wallhack", Frame, getgenv().Aimbot.WallhackEnabled, 50)
+createToggle("Team Check", Frame, getgenv().Aimbot.TeamCheck, 100)
+createToggle("Wall Check", Frame, getgenv().Aimbot.WallCheck, 150)
+
+-- Criar sliders para distâncias
+createSlider("Aimbot Max Distance", Frame, 50, 500, getgenv().Aimbot.MaxDistance, 210, function(value)
+    getgenv().Aimbot.MaxDistance = value
 end)
 
--- Wallhack Max Distance
-local wallhackDistanceBox = Instance.new("TextBox", Frame)
-wallhackDistanceBox.Size = UDim2.new(1, -20, 0, 30)
-wallhackDistanceBox.Position = UDim2.new(0, 10, 0, 190)
-wallhackDistanceBox.PlaceholderText = "Wallhack Max Distance (" .. getgenv().Aimbot.WallhackMaxDistance .. ")"
-wallhackDistanceBox.Text = ""
-wallhackDistanceBox.FocusLost:Connect(function()
-    local val = tonumber(wallhackDistanceBox.Text)
-    if val then
-        getgenv().Aimbot.WallhackMaxDistance = val
-        wallhackDistanceBox.PlaceholderText = "Wallhack Max Distance (" .. val .. ")"
+createSlider("Wallhack Max Distance", Frame, 50, 1000, getgenv().Aimbot.WallhackMaxDistance, 270, function(value)
+    getgenv().Aimbot.WallhackMaxDistance = value
+end)
+
+-- Priority Button (alternar entre FOV e Distância)
+local priorityBtn = Instance.new("TextButton", Frame)
+priorityBtn.Size = UDim2.new(1, -20, 0, 40)
+priorityBtn.Position = UDim2.new(0, 10, 0, 330)
+priorityBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+priorityBtn.BorderSizePixel = 0
+priorityBtn.TextColor3 = Color3.fromRGB(255, 180, 60)
+priorityBtn.Font = Enum.Font.GothamBold
+priorityBtn.TextSize = 18
+priorityBtn.Text = "Prioridade: " .. getgenv().Aimbot.Priority
+priorityBtn.MouseButton1Click:Connect(function()
+    if getgenv().Aimbot.Priority == "FOV" then
+        getgenv().Aimbot.Priority = "Distância"
+    else
+        getgenv().Aimbot.Priority = "FOV"
     end
-end)
-
--- Priority
-local priorityButton = Instance.new("TextButton", Frame)
-priorityButton.Size = UDim2.new(1, -20, 0, 30)
-priorityButton.Position = UDim2.new(0, 10, 0, 230)
-priorityButton.Text = "Prioridade: " .. getgenv().Aimbot.Priority
-priorityButton.MouseButton1Click:Connect(function()
-    getgenv().Aimbot.Priority = getgenv().Aimbot.Priority == "FOV" and "Distância" or "FOV"
-    priorityButton.Text = "Prioridade: " .. getgenv().Aimbot.Priority
+    priorityBtn.Text = "Prioridade: " .. getgenv().Aimbot.Priority
 end)
 
 --==============================
@@ -344,7 +441,7 @@ RunService.RenderStepped:Connect(function()
                                 }
 
                                 for i, part in ipairs(joints) do
-                                    local nextPart = (i == 1) and joints[2] or nil
+                                    local nextPart = joints[i + 1]
                                     if part and nextPart then
                                         local p1 = Camera:WorldToViewportPoint(part.Position)
                                         local p2 = Camera:WorldToViewportPoint(nextPart.Position)
