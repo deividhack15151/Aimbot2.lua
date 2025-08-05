@@ -308,4 +308,75 @@ RunService.RenderStepped:Connect(function()
                     local headPos, onScreenHead = Camera:WorldToViewportPoint(head.Position)
                     local torsoPos, onScreenTorso = Camera:WorldToViewportPoint(torso.Position)
 
-                    if onScreenRoot and onScreenHead and onScreenTorso
+                    if onScreenRoot and onScreenHead and onScreenTorso then
+                        local height = (headPos.Y - rootPos.Y) * -1
+                        local width = height / 2
+
+                        esp.box.Position = Vector2.new(rootPos.X - width / 2, rootPos.Y - height)
+                        esp.box.Size = Vector2.new(width, height)
+                        esp.box.Visible = true
+
+                        esp.name.Position = Vector2.new(rootPos.X, rootPos.Y - height - 15)
+                        esp.name.Visible = true
+
+                        local joints = {
+                            head,
+                            torso,
+                            char:FindFirstChild("LeftUpperArm"),
+                            char:FindFirstChild("RightUpperArm"),
+                            char:FindFirstChild("LeftUpperLeg"),
+                            char:FindFirstChild("RightUpperLeg"),
+                        }
+
+                        for i, part in ipairs(joints) do
+                            local nextPart = (i == 1) and joints[2] or nil
+                            if part and nextPart then
+                                local p1 = Camera:WorldToViewportPoint(part.Position)
+                                local p2 = Camera:WorldToViewportPoint(nextPart.Position)
+                                esp.skeleton[i].From = Vector2.new(p1.X, p1.Y)
+                                esp.skeleton[i].To = Vector2.new(p2.X, p2.Y)
+                                esp.skeleton[i].Visible = true
+                            else
+                                esp.skeleton[i].Visible = false
+                            end
+                        end
+                    else
+                        esp.box.Visible = false
+                        esp.name.Visible = false
+                        for _, line in ipairs(esp.skeleton) do
+                            line.Visible = false
+                        end
+                    end
+                else
+                    esp.box.Visible = false
+                    esp.name.Visible = false
+                    for _, line in ipairs(esp.skeleton) do
+                        line.Visible = false
+                    end
+                end
+            elseif wallhackObjects[player] then
+                local esp = wallhackObjects[player]
+                esp.box.Visible = false
+                esp.name.Visible = false
+                for _, line in ipairs(esp.skeleton) do
+                    line.Visible = false
+                end
+            end
+        end
+    else
+        for _, esp in pairs(wallhackObjects) do
+            esp.box.Visible = false
+            esp.name.Visible = false
+            for _, line in ipairs(esp.skeleton) do
+                line.Visible = false
+            end
+        end
+    end
+end)
+
+-- Salvar configurações ao fechar
+game:BindToClose(function()
+    if writefile then
+        writefile(configFile, HttpService:JSONEncode(getgenv().Aimbot))
+    end
+end)
