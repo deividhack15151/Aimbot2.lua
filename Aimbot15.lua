@@ -1,5 +1,5 @@
 --==================================
--- AIMBOT V3 - GUI + MELHORIAS + WALLHACK LIMITADO 30M
+-- AIMBOT V3 - GUI + MELHORIAS + WALLHACK CONFIGURÁVEL
 --==================================
 
 if game:GetService("StarterGui") then
@@ -41,7 +41,8 @@ getgenv().Aimbot = {
         Filled = false,
         Visible = true
     },
-    WallhackEnabled = false
+    WallhackEnabled = false,
+    WallhackMaxDistance = 500, -- Distância configurável wallhack
 }
 
 -- Carregar configurações salvas
@@ -56,7 +57,7 @@ end
 --==============================
 local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
 local Frame = Instance.new("Frame", ScreenGui)
-Frame.Size = UDim2.new(0, 250, 0, 360)
+Frame.Size = UDim2.new(0, 250, 0, 390)
 Frame.Position = UDim2.new(0.02, 0, 0.2, 0)
 Frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 Frame.Active = true
@@ -68,10 +69,20 @@ title.Text = "Dogao_RIP MENU"
 title.TextColor3 = Color3.new(1,1,1)
 title.BackgroundColor3 = Color3.fromRGB(20,20,20)
 
+-- Wallhack toggle
+local wallhackButton = Instance.new("TextButton", Frame)
+wallhackButton.Size = UDim2.new(1, -20, 0, 30)
+wallhackButton.Position = UDim2.new(0, 10, 0, 30)
+wallhackButton.Text = "Wallhack: OFF"
+wallhackButton.MouseButton1Click:Connect(function()
+    getgenv().Aimbot.WallhackEnabled = not getgenv().Aimbot.WallhackEnabled
+    wallhackButton.Text = "Wallhack: " .. (getgenv().Aimbot.WallhackEnabled and "ON" or "OFF")
+end)
+
 -- TeamCheck
 local teamCheckButton = Instance.new("TextButton", Frame)
 teamCheckButton.Size = UDim2.new(1, -20, 0, 30)
-teamCheckButton.Position = UDim2.new(0, 10, 0, 40)
+teamCheckButton.Position = UDim2.new(0, 10, 0, 70)
 teamCheckButton.Text = "Team Check: " .. (getgenv().Aimbot.TeamCheck and "ON" or "OFF")
 teamCheckButton.MouseButton1Click:Connect(function()
     getgenv().Aimbot.TeamCheck = not getgenv().Aimbot.TeamCheck
@@ -80,18 +91,18 @@ end)
 
 -- WallCheck
 local wallCheckButton = Instance.new("TextButton", Frame)
-wallCheckButton.Size = UDim2.new(1, -20, 0, 200)
-wallCheckButton.Position = UDim2.new(0, 10, 0, 80)
+wallCheckButton.Size = UDim2.new(1, -20, 0, 30)
+wallCheckButton.Position = UDim2.new(0, 10, 0, 110)
 wallCheckButton.Text = "Wall Check: " .. (getgenv().Aimbot.WallCheck and "ON" or "OFF")
 wallCheckButton.MouseButton1Click:Connect(function()
     getgenv().Aimbot.WallCheck = not getgenv().Aimbot.WallCheck
     wallCheckButton.Text = "Wall Check: " .. (getgenv().Aimbot.WallCheck and "ON" or "OFF")
 end)
 
--- Max Distance
+-- Max Distance para Aimbot
 local distanceBox = Instance.new("TextBox", Frame)
 distanceBox.Size = UDim2.new(1, -20, 0, 30)
-distanceBox.Position = UDim2.new(0, 10, 0, 120)
+distanceBox.Position = UDim2.new(0, 10, 0, 150)
 distanceBox.PlaceholderText = "Max Distance (" .. getgenv().Aimbot.MaxDistance .. ")"
 distanceBox.Text = ""
 distanceBox.FocusLost:Connect(function()
@@ -102,24 +113,28 @@ distanceBox.FocusLost:Connect(function()
     end
 end)
 
+-- Wallhack Max Distance
+local wallhackDistanceBox = Instance.new("TextBox", Frame)
+wallhackDistanceBox.Size = UDim2.new(1, -20, 0, 30)
+wallhackDistanceBox.Position = UDim2.new(0, 10, 0, 190)
+wallhackDistanceBox.PlaceholderText = "Wallhack Max Distance (" .. getgenv().Aimbot.WallhackMaxDistance .. ")"
+wallhackDistanceBox.Text = ""
+wallhackDistanceBox.FocusLost:Connect(function()
+    local val = tonumber(wallhackDistanceBox.Text)
+    if val then
+        getgenv().Aimbot.WallhackMaxDistance = val
+        wallhackDistanceBox.PlaceholderText = "Wallhack Max Distance (" .. val .. ")"
+    end
+end)
+
 -- Priority
 local priorityButton = Instance.new("TextButton", Frame)
 priorityButton.Size = UDim2.new(1, -20, 0, 30)
-priorityButton.Position = UDim2.new(0, 10, 0, 160)
+priorityButton.Position = UDim2.new(0, 10, 0, 230)
 priorityButton.Text = "Prioridade: " .. getgenv().Aimbot.Priority
 priorityButton.MouseButton1Click:Connect(function()
     getgenv().Aimbot.Priority = getgenv().Aimbot.Priority == "FOV" and "Distância" or "FOV"
     priorityButton.Text = "Prioridade: " .. getgenv().Aimbot.Priority
-end)
-
--- Wallhack toggle
-local wallhackButton = Instance.new("TextButton", Frame)
-wallhackButton.Size = UDim2.new(1, -20, 0, 200)
-wallhackButton.Position = UDim2.new(0, 10, 0, 30)
-wallhackButton.Text = "Wallhack: OFF"
-wallhackButton.MouseButton1Click:Connect(function()
-    getgenv().Aimbot.WallhackEnabled = not getgenv().Aimbot.WallhackEnabled
-    wallhackButton.Text = "Wallhack: " .. (getgenv().Aimbot.WallhackEnabled and "ON" or "OFF")
 end)
 
 --==============================
@@ -211,7 +226,7 @@ local function aimAt(target)
 end
 
 --==============================
--- WALLHACK MELHORADO LIMITADO 30 METROS
+-- WALLHACK MELHORADO LIMITADO DISTÂNCIA CONFIGURÁVEL
 --==============================
 local wallhackObjects = {}
 
@@ -291,7 +306,7 @@ RunService.RenderStepped:Connect(function()
                 local part = player.Character:FindFirstChild(getgenv().Aimbot.LockPart)
                 if part then
                     local dist = (part.Position - Camera.CFrame.Position).Magnitude
-                    if dist <= 30 then
+                    if dist <= getgenv().Aimbot.WallhackMaxDistance then
                         if not wallhackObjects[player] then
                             wallhackObjects[player] = createWallhackESP(player)
                         end
