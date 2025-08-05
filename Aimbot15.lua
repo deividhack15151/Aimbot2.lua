@@ -251,3 +251,134 @@ game:BindToClose(function()
         writefile(configFile, HttpService:JSONEncode(getgenv().Aimbot))
     end
 end)
+
+-- esp hack
+
+--==============================
+-- ESP VISUAL (BOX, LINHA, SKELETON)
+--==============================
+local function createRGBColor()
+    local r = math.abs(math.sin(tick() * 2)) * 255
+    local g = math.abs(math.sin(tick() * 2 + 2)) * 255
+    local b = math.abs(math.sin(tick() * 2 + 4)) * 255
+    return Color3.fromRGB(r, g, b)
+end
+
+local function createESPForPlayer(player)
+    local esp = {}
+
+    esp.box = Drawing.new("Square")
+    esp.box.Thickness = 1.5
+    esp.box.Filled = false
+
+    esp.line = Drawing.new("Line")
+    esp.line.Thickness = 1
+
+    -- Skeleton (exemplo simplificado com cabeça, torso, braços)
+    esp.skeleton = {}
+
+    for i = 1, 6 do
+        local line = Drawing.new("Line")
+        line.Thickness = 1
+        esp.skeleton[i] = line
+    end
+
+    return esp
+end
+
+local espObjects = {}
+
+RunService.RenderStepped:Connect(function()
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local alive = not getgenv().Aimbot.AliveCheck or isAlive(player)
+            local notTeam = not getgenv().Aimbot.TeamCheck or player.Team ~= LocalPlayer.Team
+
+            if alive and notTeam then
+                if not espObjects[player] then
+                    espObjects[player] = createESPForPlayer(player)
+                end
+
+                local char = player.Character
+                local hrp = char:FindFirstChild("HumanoidRootPart")
+                local head = char:FindFirstChild("Head")
+                local rootPos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
+
+                if onScreen then
+                    local color = createRGBColor()
+
+                    -- Caixa
+                    local sizeY = 3
+                    local height = (Camera:WorldToViewportPoint(hrp.Position - Vector3.new(0, sizeY, 0)).Y - rootPos.Y)
+                    local width = height / 1.5
+
+                    espObjects[player].box.Visible = true
+                    espObjects[player].box.Color = color
+                    espObjects[player].box.Size = Vector2.new(width, -height)
+                    espObjects[player].box.Position = Vector2.new(rootPos.X - width / 2, rootPos.Y)
+
+                    -- Linha até o chão
+                    espObjects[player].line.Visible = true
+                    espObjects[player].line.Color = color
+                    espObjects[player].line.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
+                    espObjects[player].line.To = Vector2.new(rootPos.X, rootPos.Y + height / 2)
+
+                    -- Skeleton simplificado
+                    local joints = {
+                        char:FindFirstChild("Head"),
+                        char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso"),
+                        char:FindFirstChild("LeftUpperArm"),
+                        char:FindFirstChild("RightUpperArm"),
+                        char:FindFirstChild("LeftUpperLeg"),
+                        char:FindFirstChild("RightUpperLeg"),
+                    }
+
+                    for i, part in ipairs(joints) do
+                        local nextPart = (i == 1) and joints[2] or nil
+                        if part and nextPart then
+                            local p1 = Camera:WorldToViewportPoint(part.Position)
+                            local p2 = Camera:WorldToViewportPoint(nextPart.Position)
+                            espObjects[player].skeleton[i].From = Vector2.new(p1.X, p1.Y)
+                            espObjects[player].skeleton[i].To = Vector2.new(p2.X, p2.Y)
+                            espObjects[player].skeleton[i].Color = color
+                            espObjects[player].skeleton[i].Visible = true
+                        else
+                            espObjects[player].skeleton[i].Visible = false
+                        end
+                    end
+                else
+                    -- Desativa se não está na tela
+                    if espObjects[player] then
+                        espObjects[player].box.Visible = false
+                        espObjects[player].line.Visible = false
+                        for _, part in ipairs(espObjects[player].skeleton) do
+                            part.Visible = false
+                        end
+                    end
+                end
+            else
+                -- Desativa se está morto ou aliado
+                if espObjects[player] then
+                    espObjects[player].box.Visible = false
+                    espObjects[player].line.Visible = false
+                    for _, part in ipairs(espObjects[player].skeleton) do
+                        part.Visible = false
+                    end
+                end
+            end
+        elseif espObjects[player] then
+            -- Remove objetos de jogadores que saíram
+            for _, obj in pairs(espObjects[player]) do
+                if typeof(obj) == "table" then
+                    for _, sub in pairs(obj) do
+                        sub:Remove()
+                    end
+                else
+                    obj:Remove()
+                end
+            end
+            espObjects[player] = nil
+        end
+    end
+end)
+
