@@ -48,8 +48,8 @@ getgenv().Aimbot = {
 -- ** CONFIGURAÇÃO PADRÃO DO SPEED MOD AQUI **
 getgenv().SpeedMod = {
     Enabled = false,
-    Multiplier = 5, -- multiplicador inicial 1x (normal)
-    DefaultWalkSpeed = 16, -- padrão do Roblox
+    Multiplier = 30, -- multiplicador inicial 1x (normal)
+    DefaultWalkSpeed = 30, -- padrão do Roblox
 }
 
 -- Carregar configurações salvas
