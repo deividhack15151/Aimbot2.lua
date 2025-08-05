@@ -24,7 +24,7 @@ local Mouse = LocalPlayer:GetMouse()
 --==============================
 getgenv().Aimbot = {
     Enabled = true,
-    TeamCheck = false,
+    TeamCheck = true, -- Ativado por padrão
     WallCheck = true,
     AliveCheck = true,
     LockPart = "Head",
@@ -120,7 +120,7 @@ fovCircle.Filled = getgenv().Aimbot.FOV.Filled
 fovCircle.Radius = getgenv().Aimbot.FOV.Radius
 
 local function updateFOV()
-    fovCircle.Position = Vector2.new(Mouse.X, Mouse.Y + 36)
+    fovCircle.Position = Camera.ViewportSize / 2 -- Mira centralizada
     fovCircle.Visible = getgenv().Aimbot.FOV.Visible
 end
 
@@ -132,18 +132,31 @@ local function isAlive(player)
     return humanoid and humanoid.Health > 0
 end
 
+-- WallCheck aprimorado
 local function isVisible(part)
     local origin = Camera.CFrame.Position
     local direction = (part.Position - origin)
-    
+
     local raycastParams = RaycastParams.new()
-    raycastParams.FilterDescendantsInstances = {LocalPlayer.Character}
     raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
-    
+
+    local ignoreList = {LocalPlayer.Character}
+
+    for _, v in ipairs(workspace:GetDescendants()) do
+        if v:IsA("BasePart") then
+            if not v.CanCollide or v.Transparency >= 0.95 or v.Name:lower():find("effect") then
+                table.insert(ignoreList, v)
+            end
+        end
+    end
+
+    raycastParams.FilterDescendantsInstances = ignoreList
+
     local result = workspace:Raycast(origin, direction, raycastParams)
     return (not result) or result.Instance:IsDescendantOf(part.Parent)
 end
 
+-- Busca o jogador mais próximo
 local function getClosestTarget()
     local closest = nil
     local shortest = math.huge
@@ -159,7 +172,7 @@ local function getClosestTarget()
                 if distance3D <= getgenv().Aimbot.MaxDistance then
                     local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
                     if onScreen then
-                        local distFOV = (Vector2.new(Mouse.X, Mouse.Y) - Vector2.new(screenPos.X, screenPos.Y)).Magnitude
+                        local distFOV = (Camera.ViewportSize / 2 - Vector2.new(screenPos.X, screenPos.Y)).Magnitude
                         if distFOV <= getgenv().Aimbot.FOV.Radius then
                             if not getgenv().Aimbot.WallCheck or isVisible(part) then
                                 local value = getgenv().Aimbot.Priority == "FOV" and distFOV or distance3D
