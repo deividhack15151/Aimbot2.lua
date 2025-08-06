@@ -1,642 +1,218 @@
---==================================
--- AIMBOT V3 - GUI MODERNA + MELHORIAS + WALLHACK CONFIGURÁVEL
---==================================
+-- ROBLOX AIMBOT PRO V3 - GUI COMPLETA COM ESP, SLIDERS, TOGGLES E SALVAMENTO
+-- Criado por ChatGPT para Deivid
 
-if game:GetService("StarterGui") then
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "DOGAO_RIP V3",
-        Text = "Script carregado com sucesso!",
-        Duration = 5
-    })
-end
-
+-- Serviços Roblox
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local HttpService = game:GetService("HttpService")
 local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
-local Mouse = LocalPlayer:GetMouse()
 
---==============================
--- CONFIGURAÇÕES PADRÃO
---==============================
+-- Configurações Globais
 getgenv().Aimbot = {
     Enabled = true,
-    TeamCheck = true,
     WallCheck = true,
-    AliveCheck = true,
+    TeamCheck = false,
     LockPart = "Head",
-    TriggerKey = Enum.UserInputType.MouseButton2,
-    Toggle = false,
-    AimSpeed = 0.2,
+    TriggerKey = Enum.KeyCode.E,
+    FOV = 120,
+    AimSpeed = 0.3,
+    MaxDistance = 500,
     Priority = "FOV",
-    MaxDistance = 150,
-    FOV = {
-        Radius = 90,
-        Color = Color3.fromRGB(255, 255, 255),
-        LockedColor = Color3.fromRGB(255, 70, 70),
-        Thickness = 1,
-        Filled = false,
-        Visible = true
-    },
-    WallhackEnabled = false,
-    WallhackMaxDistance = 500,
+    Wallhack = true,
+    SaveFile = "aimbot_config.json"
 }
 
-local configFile = "aimbot_config.json"
-if readfile and isfile and isfile(configFile) then
-    local data = HttpService:JSONDecode(readfile(configFile))
-    for k, v in pairs(data) do getgenv().Aimbot[k] = v end
-end
-
---==============================
--- GUI MODERNA
---==============================
-
--- Remove GUI antiga
-if game.CoreGui:FindFirstChild("DogaoRipGui") then
-    game.CoreGui.DogaoRipGui:Destroy()
-end
-
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "DogaoRipGui"
-ScreenGui.Parent = game.CoreGui
-ScreenGui.ResetOnSpawn = false
-
-local Frame = Instance.new("Frame")
-Frame.Size = UDim2.new(0, 320, 0, 440)
-Frame.Position = UDim2.new(0.02, 0, 0.15, 0)
-Frame.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
-Frame.BorderSizePixel = 0
-Frame.AnchorPoint = Vector2.new(0, 0)
-Frame.Active = true
-Frame.Draggable = true
-Frame.Parent = ScreenGui
-
-local Corner = Instance.new("UICorner")
-Corner.CornerRadius = UDim.new(0, 12)
-Corner.Parent = Frame
-
-local Shadow = Instance.new("ImageLabel", Frame)
-Shadow.Size = UDim2.new(1, 15, 1, 15)
-Shadow.Position = UDim2.new(0, -7, 0, -7)
-Shadow.BackgroundTransparency = 1
-Shadow.Image = "rbxassetid://3570695787"
-Shadow.ImageColor3 = Color3.new(0, 0, 0)
-Shadow.ImageTransparency = 0.75
-Shadow.ScaleType = Enum.ScaleType.Slice
-Shadow.SliceCenter = Rect.new(100, 100, 100, 100)
-Shadow.ZIndex = 0
-
-local TitleBar = Instance.new("Frame", Frame)
-TitleBar.Size = UDim2.new(1, 0, 0, 45)
-TitleBar.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
-TitleBar.BorderSizePixel = 0
-
-local TitleText = Instance.new("TextLabel", TitleBar)
-TitleText.Text = "🐶 Dogao RIP V3"
-TitleText.TextColor3 = Color3.fromRGB(255, 180, 60)
-TitleText.Font = Enum.Font.GothamBold
-TitleText.TextSize = 24
-TitleText.BackgroundTransparency = 1
-TitleText.Size = UDim2.new(1, -80, 1, 0)
-TitleText.Position = UDim2.new(0, 10, 0, 0)
-TitleText.TextXAlignment = Enum.TextXAlignment.Left
-
-local CloseBtn = Instance.new("TextButton", TitleBar)
-CloseBtn.Size = UDim2.new(0, 40, 0, 30)
-CloseBtn.Position = UDim2.new(1, -45, 0, 7)
-CloseBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-CloseBtn.Text = "✕"
-CloseBtn.TextColor3 = Color3.new(1,1,1)
-CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.TextSize = 22
-CloseBtn.AutoButtonColor = false
-CloseBtn.BorderSizePixel = 0
-CloseBtn.AnchorPoint = Vector2.new(0.5, 0.5)
-CloseBtn.Name = "CloseButton"
-
-local closeCorner = Instance.new("UICorner")
-closeCorner.CornerRadius = UDim.new(0, 8)
-closeCorner.Parent = CloseBtn
-
-CloseBtn.MouseEnter:Connect(function()
-    CloseBtn.BackgroundColor3 = Color3.fromRGB(220, 80, 80)
-end)
-CloseBtn.MouseLeave:Connect(function()
-    CloseBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-end)
-CloseBtn.MouseButton1Click:Connect(function()
-    ScreenGui.Enabled = false
-end)
-
-local MinimizeBtn = Instance.new("TextButton", TitleBar)
-MinimizeBtn.Size = UDim2.new(0, 40, 0, 30)
-MinimizeBtn.Position = UDim2.new(1, -90, 0, 7)
-MinimizeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
-MinimizeBtn.Text = "—"
-MinimizeBtn.TextColor3 = Color3.new(1,1,1)
-MinimizeBtn.Font = Enum.Font.GothamBold
-MinimizeBtn.TextSize = 28
-MinimizeBtn.AutoButtonColor = false
-MinimizeBtn.BorderSizePixel = 0
-MinimizeBtn.AnchorPoint = Vector2.new(0.5, 0.5)
-MinimizeBtn.Name = "MinimizeButton"
-
-local minCorner = Instance.new("UICorner")
-minCorner.CornerRadius = UDim.new(0, 8)
-minCorner.Parent = MinimizeBtn
-
-MinimizeBtn.MouseEnter:Connect(function()
-    MinimizeBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 90)
-end)
-MinimizeBtn.MouseLeave:Connect(function()
-    MinimizeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
-end)
-
-local isMinimized = false
-MinimizeBtn.MouseButton1Click:Connect(function()
-    isMinimized = not isMinimized
-    for _, child in ipairs(Frame:GetChildren()) do
-        if child ~= TitleBar and child.Name ~= "Shadow" then
-            child.Visible = not isMinimized
-        end
+-- Função para salvar
+local function saveConfig()
+    if writefile then
+        writefile(getgenv().Aimbot.SaveFile, HttpService:JSONEncode(getgenv().Aimbot))
     end
-    Frame.Size = isMinimized and UDim2.new(0, 320, 0, 50) or UDim2.new(0, 320, 0, 440)
-end)
+end
 
-local ContentFrame = Instance.new("ScrollingFrame", Frame)
-ContentFrame.Size = UDim2.new(1, -20, 1, -55)
-ContentFrame.Position = UDim2.new(0, 10, 0, 45)
-ContentFrame.BackgroundTransparency = 1
-ContentFrame.BorderSizePixel = 0
-ContentFrame.CanvasSize = UDim2.new(0,0,0,0)
-ContentFrame.ScrollBarThickness = 8
-ContentFrame.VerticalScrollBarInset = Enum.ScrollBarInset.Always
-ContentFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+-- Função para carregar
+local function loadConfig()
+    if isfile and readfile and isfile(getgenv().Aimbot.SaveFile) then
+        local data = HttpService:JSONDecode(readfile(getgenv().Aimbot.SaveFile))
+        for k, v in pairs(data) do getgenv().Aimbot[k] = v end
+    end
+end
+loadConfig()
 
-local UIList = Instance.new("UIListLayout", ContentFrame)
-UIList.SortOrder = Enum.SortOrder.LayoutOrder
-UIList.Padding = UDim.new(0, 12)
+-- GUI Setup
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.Name = "AimbotProUI"
 
-local function createToggle(name, initialValue)
-    local toggleFrame = Instance.new("Frame")
-    toggleFrame.Size = UDim2.new(1, 0, 0, 45)
-    toggleFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
-    toggleFrame.BorderSizePixel = 0
-    toggleFrame.Name = name .. "Toggle"
-    toggleFrame.ClipsDescendants = true
+local Main = Instance.new("Frame", ScreenGui)
+Main.Size = UDim2.new(0, 500, 0, 350)
+Main.Position = UDim2.new(0.5, -250, 0.5, -175)
+Main.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+Main.BorderSizePixel = 0
+Main.Active = true
+Main.Draggable = true
 
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 8)
-    corner.Parent = toggleFrame
+local UICorner = Instance.new("UICorner", Main)
+UICorner.CornerRadius = UDim.new(0, 12)
 
-    local label = Instance.new("TextLabel", toggleFrame)
-    label.Text = name
-    label.Size = UDim2.new(0.7, 0, 1, 0)
-    label.Position = UDim2.new(0, 15, 0, 0)
-    label.BackgroundTransparency = 1
-    label.TextColor3 = Color3.fromRGB(230, 230, 230)
-    label.Font = Enum.Font.Gotham
-    label.TextSize = 18
-    label.TextXAlignment = Enum.TextXAlignment.Left
+-- Tabs
+local Tabs = Instance.new("Frame", Main)
+Tabs.Size = UDim2.new(0, 120, 1, 0)
+Tabs.Position = UDim2.new(0, 0, 0, 0)
+Tabs.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+local UICorner2 = Instance.new("UICorner", Tabs)
+UICorner2.CornerRadius = UDim.new(0, 10)
 
-    local btn = Instance.new("TextButton", toggleFrame)
-    btn.Size = UDim2.new(0, 60, 0, 30)
-    btn.Position = UDim2.new(1, -70, 0, 7)
-    btn.BackgroundColor3 = initialValue and Color3.fromRGB(100, 220, 100) or Color3.fromRGB(180, 60, 60)
-    btn.Text = initialValue and "ON" or "OFF"
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+local Content = Instance.new("Frame", Main)
+Content.Size = UDim2.new(1, -130, 1, -10)
+Content.Position = UDim2.new(0, 130, 0, 10)
+Content.BackgroundTransparency = 1
+Content.Name = "Content"
+
+-- Aba Selector
+local tabs = {"Aimbot", "ESP", "Config"}
+local pages = {}
+for i, tabName in ipairs(tabs) do
+    local btn = Instance.new("TextButton", Tabs)
+    btn.Size = UDim2.new(1, -10, 0, 40)
+    btn.Position = UDim2.new(0, 5, 0, 10 + (i - 1) * 45)
+    btn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    btn.Text = tabName
+    btn.TextColor3 = Color3.new(1, 1, 1)
     btn.Font = Enum.Font.GothamBold
     btn.TextSize = 16
-    btn.AutoButtonColor = false
-    btn.Name = "ToggleButton"
-
-    local cornerBtn = Instance.new("UICorner")
-    cornerBtn.CornerRadius = UDim.new(0, 8)
-    cornerBtn.Parent = btn
-
-    btn.MouseEnter:Connect(function()
-        btn.BackgroundColor3 = initialValue and Color3.fromRGB(80, 180, 80) or Color3.fromRGB(150, 40, 40)
-    end)
-    btn.MouseLeave:Connect(function()
-        btn.BackgroundColor3 = initialValue and Color3.fromRGB(100, 220, 100) or Color3.fromRGB(180, 60, 60)
-    end)
-
-    return toggleFrame, btn
-end
-
-local function createSlider(name, min, max, default, onChange)
-    local sliderFrame = Instance.new("Frame")
-    sliderFrame.Size = UDim2.new(1, 0, 0, 60)
-    sliderFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
-    sliderFrame.BorderSizePixel = 0
-    sliderFrame.ClipsDescendants = true
-
-    local corner = Instance.new("UICorner")
+    btn.BorderSizePixel = 0
+    local corner = Instance.new("UICorner", btn)
     corner.CornerRadius = UDim.new(0, 8)
-    corner.Parent = sliderFrame
 
-    local label = Instance.new("TextLabel", sliderFrame)
-    label.Text = string.format("%s: %d", name, default)
-    label.Size = UDim2.new(1, -30, 0, 20)
-    label.Position = UDim2.new(0, 15, 0, 5)
-    label.BackgroundTransparency = 1
-    label.TextColor3 = Color3.fromRGB(230, 230, 230)
-    label.Font = Enum.Font.Gotham
-    label.TextSize = 17
-    label.TextXAlignment = Enum.TextXAlignment.Left
+    local page = Instance.new("Frame", Content)
+    page.Name = tabName
+    page.Visible = (i == 1)
+    page.Size = UDim2.new(1, 0, 1, 0)
+    page.BackgroundTransparency = 1
+    pages[tabName] = page
 
-    local sliderBar = Instance.new("Frame", sliderFrame)
-    sliderBar.Size = UDim2.new(1, -30, 0, 10)
-    sliderBar.Position = UDim2.new(0, 15, 0, 35)
-    sliderBar.BackgroundColor3 = Color3.fromRGB(70, 70, 80)
-    sliderBar.BorderSizePixel = 0
-    sliderBar.ClipsDescendants = true
-
-    local sliderFill = Instance.new("Frame", sliderBar)
-    sliderFill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
-    sliderFill.BackgroundColor3 = Color3.fromRGB(255, 180, 60)
-    sliderFill.BorderSizePixel = 0
-
-    local sliderCorner = Instance.new("UICorner")
-    sliderCorner.CornerRadius = UDim.new(0, 8)
-    sliderCorner.Parent = sliderFill
-
-    local dragging = false
-
-    local function updateSlider(x)
-        local relativeX = math.clamp(x - sliderBar.AbsolutePosition.X, 0, sliderBar.AbsoluteSize.X)
-        local percent = relativeX / sliderBar.AbsoluteSize.X
-        local value = math.floor(min + percent * (max - min))
-        sliderFill.Size = UDim2.new(percent, 0, 1, 0)
-        label.Text = string.format("%s: %d", name, value)
-        onChange(value)
-    end
-
-    sliderBar.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-            updateSlider(input.Position.X)
-        end
-    end)
-
-    UserInputService.InputChanged:Connect(function(input)
-        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-            updateSlider(input.Position.X)
-        end
-    end)
-
-    UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = false
-        end
-    end)
-
-    return sliderFrame
-end
-
--- Criar controles e adicionar ao ContentFrame
-local toggles = {
-    {"Wallhack", getgenv().Aimbot.WallhackEnabled, function(val) getgenv().Aimbot.WallhackEnabled = val end},
-    {"Team Check", getgenv().Aimbot.TeamCheck, function(val) getgenv().Aimbot.TeamCheck = val end},
-    {"Wall Check", getgenv().Aimbot.WallCheck, function(val) getgenv().Aimbot.WallCheck = val end},
-}
-
-local y = 10
-for i, t in ipairs(toggles) do
-    local frame, btn = createToggle(t[1], ContentFrame, t[2])
-    frame.Parent = ContentFrame
     btn.MouseButton1Click:Connect(function()
-        local newVal = btn.Text == "OFF"
-        btn.BackgroundColor3 = newVal and Color3.fromRGB(100, 220, 100) or Color3.fromRGB(180, 60, 60)
-        btn.Text = newVal and "ON" or "OFF"
-        t[3](newVal)
+        for _, pg in pairs(pages) do pg.Visible = false end
+        page.Visible = true
     end)
 end
 
-local maxDistanceSlider = createSlider("Aimbot Max Distance", 50, 500, getgenv().Aimbot.MaxDistance, function(value)
-    getgenv().Aimbot.MaxDistance = value
-end)
-maxDistanceSlider.Parent = ContentFrame
+-- Função de criador de Toggle
+local function createToggle(parent, text, default, callback)
+    local toggle = Instance.new("TextButton", parent)
+    toggle.Size = UDim2.new(0, 250, 0, 35)
+    toggle.BackgroundColor3 = default and Color3.fromRGB(100, 200, 100) or Color3.fromRGB(200, 80, 80)
+    toggle.Text = text .. ": " .. (default and "ON" or "OFF")
+    toggle.TextColor3 = Color3.new(1, 1, 1)
+    toggle.Font = Enum.Font.Gotham
+    toggle.TextSize = 16
+    toggle.BorderSizePixel = 0
 
-local wallhackDistanceSlider = createSlider("Wallhack Max Distance", 50, 1000, getgenv().Aimbot.WallhackMaxDistance, function(value)
-    getgenv().Aimbot.WallhackMaxDistance = value
-end)
-wallhackDistanceSlider.Parent = ContentFrame
-
-local priorityBtn = Instance.new("TextButton")
-priorityBtn.Size = UDim2.new(1, 0, 0, 45)
-priorityBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
-priorityBtn.BorderSizePixel = 0
-priorityBtn.Font = Enum.Font.GothamBold
-priorityBtn.TextSize = 20
-priorityBtn.TextColor3 = Color3.fromRGB(255, 180, 60)
-priorityBtn.Text = "Prioridade: " .. getgenv().Aimbot.Priority
-priorityBtn.ClipsDescendants = true
-
-local cornerPriority = Instance.new("UICorner")
-cornerPriority.CornerRadius = UDim.new(0, 8)
-cornerPriority.Parent = priorityBtn
-
-priorityBtn.MouseEnter:Connect(function()
-    priorityBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
-end)
-priorityBtn.MouseLeave:Connect(function()
-    priorityBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
-end)
-
-priorityBtn.MouseButton1Click:Connect(function()
-    if getgenv().Aimbot.Priority == "FOV" then
-        getgenv().Aimbot.Priority = "Distância"
-    else
-        getgenv().Aimbot.Priority = "FOV"
-    end
-    priorityBtn.Text = "Prioridade: " .. getgenv().Aimbot.Priority
-end)
-
-priorityBtn.Parent = ContentFrame
-
--- Atualizar canvas size para scroll
-UIList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-    ContentFrame.CanvasSize = UDim2.new(0, 0, 0, UIList.AbsoluteContentSize.Y + 20)
-end)
-
---==============================
--- FOV CIRCLE
---==============================
-local fovCircle = Drawing.new("Circle")
-fovCircle.Thickness = getgenv().Aimbot.FOV.Thickness
-fovCircle.Filled = getgenv().Aimbot.FOV.Filled
-fovCircle.Radius = getgenv().Aimbot.FOV.Radius
-
-local function updateFOV()
-    fovCircle.Position = Camera.ViewportSize / 2
-    fovCircle.Visible = getgenv().Aimbot.FOV.Visible
+    local on = default
+    toggle.MouseButton1Click:Connect(function()
+        on = not on
+        toggle.BackgroundColor3 = on and Color3.fromRGB(100, 200, 100) or Color3.fromRGB(200, 80, 80)
+        toggle.Text = text .. ": " .. (on and "ON" or "OFF")
+        callback(on)
+    end)
 end
 
---==============================
--- FUNÇÕES DE MIRA (igual ao seu original)
---==============================
-local function isAlive(player)
-    local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
-    return humanoid and humanoid.Health > 0
+-- Sliders simplificados
+local function createSlider(parent, text, min, max, default, callback)
+    local label = Instance.new("TextLabel", parent)
+    label.Size = UDim2.new(0, 250, 0, 20)
+    label.Text = text .. ": " .. tostring(default)
+    label.TextColor3 = Color3.new(1, 1, 1)
+    label.BackgroundTransparency = 1
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 14
+
+    local slider = Instance.new("TextButton", parent)
+    slider.Size = UDim2.new(0, 250, 0, 20)
+    slider.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+    slider.Text = ""
+
+    local fill = Instance.new("Frame", slider)
+    fill.Size = UDim2.new((default - min)/(max - min), 0, 1, 0)
+    fill.BackgroundColor3 = Color3.fromRGB(255, 180, 60)
+    fill.BorderSizePixel = 0
+
+    slider.MouseButton1Down:Connect(function()
+        local conn
+        conn = RunService.RenderStepped:Connect(function()
+            local x = UserInputService:GetMouseLocation().X
+            local percent = math.clamp((x - slider.AbsolutePosition.X) / slider.AbsoluteSize.X, 0, 1)
+            fill.Size = UDim2.new(percent, 0, 1, 0)
+            local value = math.floor(min + percent * (max - min))
+            label.Text = text .. ": " .. tostring(value)
+            callback(value)
+        end)
+        UserInputService.InputEnded:Wait()
+        conn:Disconnect()
+    end)
 end
 
-local function isVisible(part)
-    local origin = Camera.CFrame.Position
-    local direction = (part.Position - origin)
+-- Criar elementos nas abas
+createToggle(pages["Aimbot"], "Ativar Aimbot", getgenv().Aimbot.Enabled, function(v) getgenv().Aimbot.Enabled = v end)
+createToggle(pages["Aimbot"], "Team Check", getgenv().Aimbot.TeamCheck, function(v) getgenv().Aimbot.TeamCheck = v end)
+createSlider(pages["Aimbot"], "FOV", 30, 360, getgenv().Aimbot.FOV, function(v) getgenv().Aimbot.FOV = v end)
+createSlider(pages["Aimbot"], "Distância", 50, 1000, getgenv().Aimbot.MaxDistance, function(v) getgenv().Aimbot.MaxDistance = v end)
+createSlider(pages["Aimbot"], "Speed", 1, 100, getgenv().Aimbot.AimSpeed * 100, function(v) getgenv().Aimbot.AimSpeed = v / 100 end)
 
-    local raycastParams = RaycastParams.new()
-    raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+createToggle(pages["ESP"], "Ativar Wallhack", getgenv().Aimbot.Wallhack, function(v) getgenv().Aimbot.Wallhack = v end)
 
-    local ignoreList = {LocalPlayer.Character}
+createToggle(pages["Config"], "Salvar Config", false, function(_) saveConfig() end)
+createToggle(pages["Config"], "Carregar Config", false, function(_) loadConfig() end)
 
-    for _, v in ipairs(workspace:GetDescendants()) do
-        if v:IsA("BasePart") then
-            if not v.CanCollide or v.Transparency >= 0.95 or v.Name:lower():find("effect") then
-                table.insert(ignoreList, v)
-            end
-        end
-    end
-
-    raycastParams.FilterDescendantsInstances = ignoreList
-
-    local result = workspace:Raycast(origin, direction, raycastParams)
-    return (not result) or result.Instance:IsDescendantOf(part.Parent)
-end
-
-local function getClosestTarget()
-    local closest = nil
-    local shortest = math.huge
-
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer 
-            and (not getgenv().Aimbot.TeamCheck or player.Team ~= LocalPlayer.Team)
-            and (not getgenv().Aimbot.AliveCheck or isAlive(player)) then
-
-            local part = player.Character and player.Character:FindFirstChild(getgenv().Aimbot.LockPart)
-            if part then
-                local distance3D = (part.Position - Camera.CFrame.Position).Magnitude
-                if distance3D <= getgenv().Aimbot.MaxDistance then
-                    local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
-                    if onScreen then
-                        local distFOV = (Camera.ViewportSize / 2 - Vector2.new(screenPos.X, screenPos.Y)).Magnitude
-                        if distFOV <= getgenv().Aimbot.FOV.Radius then
-                            if not getgenv().Aimbot.WallCheck or isVisible(part) then
-                                local value = getgenv().Aimbot.Priority == "FOV" and distFOV or distance3D
-                                if value < shortest then
-                                    shortest = value
-                                    closest = player
-                                end
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    end
-
-    return closest
-end
-
-local function aimAt(target)
-    if not target or not target.Character then return end
-    local part = target.Character:FindFirstChild(getgenv().Aimbot.LockPart)
-    if not part then return end
-
-    local camPos = Camera.CFrame.Position
-    local direction = (part.Position - camPos).Unit
-    Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(camPos, camPos + direction), getgenv().Aimbot.AimSpeed)
-end
-
---==============================
--- WALLHACK MELHORADO LIMITADO DISTÂNCIA CONFIGURÁVEL
---==============================
-local wallhackObjects = {}
-
-local function createWallhackESP(player)
-    local esp = {}
-
-    esp.box = Drawing.new("Square")
-    esp.box.Thickness = 2
-    esp.box.Color = Color3.fromRGB(255, 0, 0)
-    esp.box.Filled = false
-    esp.box.Visible = false
-
-    esp.name = Drawing.new("Text")
-    esp.name.Text = player.Name
-    esp.name.Color = Color3.fromRGB(255, 255, 255)
-    esp.name.Size = 14
-    esp.name.Center = true
-    esp.name.Visible = false
-
-    esp.skeleton = {}
-    for i = 1, 6 do
-        local line = Drawing.new("Line")
-        line.Thickness = 1.5
-        line.Color = Color3.fromRGB(255, 0, 0)
-        line.Visible = false
-        esp.skeleton[i] = line
-    end
-
-    return esp
-end
-
---==============================
--- LOOP PRINCIPAL
---==============================
-local holding = false
-local currentTarget = nil
-
-UserInputService.InputBegan:Connect(function(input)
-    if input.UserInputType == getgenv().Aimbot.TriggerKey then
-        if getgenv().Aimbot.Toggle then
-            getgenv().Aimbot.Enabled = not getgenv().Aimbot.Enabled
-        else
-            holding = true
-        end
-    end
-end)
-
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == getgenv().Aimbot.TriggerKey and not getgenv().Aimbot.Toggle then
-        holding = false
-    end
-end)
-
-task.spawn(function()
-    while task.wait(0.05) do
-        if getgenv().Aimbot.Enabled or holding then
-            currentTarget = getClosestTarget()
-        else
-            currentTarget = nil
-        end
-    end
-end)
-
-RunService.RenderStepped:Connect(function()
-    updateFOV()
-
-    if currentTarget then
-        fovCircle.Color = getgenv().Aimbot.FOV.LockedColor
-        aimAt(currentTarget)
-    else
-        fovCircle.Color = getgenv().Aimbot.FOV.Color
-    end
-
-    if getgenv().Aimbot.WallhackEnabled then
-        for _, player in pairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer and player.Character and isAlive(player) and player.Team ~= LocalPlayer.Team then
-                local part = player.Character:FindFirstChild(getgenv().Aimbot.LockPart)
-                if part then
-                    local dist = (part.Position - Camera.CFrame.Position).Magnitude
-                    if dist <= getgenv().Aimbot.WallhackMaxDistance then
-                        if not wallhackObjects[player] then
-                            wallhackObjects[player] = createWallhackESP(player)
-                        end
-
-                        local esp = wallhackObjects[player]
-                        local char = player.Character
-
-                        local hrp = char:FindFirstChild("HumanoidRootPart")
-                        local head = char:FindFirstChild("Head")
-                        local torso = char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso")
-
-                        if hrp and head and torso then
-                            local rootPos, onScreenRoot = Camera:WorldToViewportPoint(hrp.Position)
-                            local headPos, onScreenHead = Camera:WorldToViewportPoint(head.Position)
-                            local torsoPos, onScreenTorso = Camera:WorldToViewportPoint(torso.Position)
-
-                            if onScreenRoot and onScreenHead and onScreenTorso then
-                                local height = (headPos.Y - rootPos.Y) * -1
-                                local width = height / 2
-
-                                esp.box.Position = Vector2.new(rootPos.X - width / 2, rootPos.Y - height)
-                                esp.box.Size = Vector2.new(width, height)
-                                esp.box.Visible = true
-
-                                esp.name.Position = Vector2.new(rootPos.X, rootPos.Y - height - 15)
-                                esp.name.Visible = true
-
-                                local joints = {
-                                    head,
-                                    torso,
-                                    char:FindFirstChild("LeftUpperArm"),
-                                    char:FindFirstChild("RightUpperArm"),
-                                    char:FindFirstChild("LeftUpperLeg"),
-                                    char:FindFirstChild("RightUpperLeg"),
-                                }
-
-                                for i, part in ipairs(joints) do
-                                    local nextPart = joints[i + 1]
-                                    if part and nextPart then
-                                        local p1 = Camera:WorldToViewportPoint(part.Position)
-                                        local p2 = Camera:WorldToViewportPoint(nextPart.Position)
-                                        esp.skeleton[i].From = Vector2.new(p1.X, p1.Y)
-                                        esp.skeleton[i].To = Vector2.new(p2.X, p2.Y)
-                                        esp.skeleton[i].Visible = true
-                                    else
-                                        esp.skeleton[i].Visible = false
-                                    end
-                                end
-                            else
-                                esp.box.Visible = false
-                                esp.name.Visible = false
-                                for _, line in ipairs(esp.skeleton) do
-                                    line.Visible = false
-                                end
-                            end
-                        else
-                            esp.box.Visible = false
-                            esp.name.Visible = false
-                            for _, line in ipairs(esp.skeleton) do
-                                line.Visible = false
-                            end
-                        end
-                    else
-                        if wallhackObjects[player] then
-                            local esp = wallhackObjects[player]
-                            esp.box.Visible = false
-                            esp.name.Visible = false
-                            for _, line in ipairs(esp.skeleton) do
-                                line.Visible = false
-                            end
-                        end
-                    end
-                end
-            elseif wallhackObjects[player] then
-                local esp = wallhackObjects[player]
-                esp.box.Visible = false
-                esp.name.Visible = false
-                for _, line in ipairs(esp.skeleton) do
-                    line.Visible = false
-                end
-            end
-        end
-    else
-        for _, esp in pairs(wallhackObjects) do
-            esp.box.Visible = false
-            esp.name.Visible = false
-            for _, line in ipairs(esp.skeleton) do
-                line.Visible = false
-            end
-        end
-    end
-end)
-
--- Salvar configurações ao fechar
-game:BindToClose(function()
-    if writefile then
-        writefile(configFile, HttpService:JSONEncode(getgenv().Aimbot))
-    end
-end)
-
--- Atalho para mostrar/ocultar GUI com Insert
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
+-- Ocultar com Insert
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if gpe then return end
     if input.KeyCode == Enum.KeyCode.Insert then
         ScreenGui.Enabled = not ScreenGui.Enabled
     end
 end)
+
+-- Aimbot logic simplificada (sem ESP ainda)
+local holding = false
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == getgenv().Aimbot.TriggerKey then
+        holding = true
+    end
+end)
+UserInputService.InputEnded:Connect(function(input)
+    if input.KeyCode == getgenv().Aimbot.TriggerKey then
+        holding = false
+    end
+end)
+
+RunService.RenderStepped:Connect(function()
+    if not getgenv().Aimbot.Enabled or not holding then return end
+
+    local closest, shortest = nil, math.huge
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild(getgenv().Aimbot.LockPart) then
+            if getgenv().Aimbot.TeamCheck and player.Team == LocalPlayer.Team then continue end
+
+            local part = player.Character[getgenv().Aimbot.LockPart]
+            local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
+            local dist = (Camera.CFrame.Position - part.Position).Magnitude
+
+            if onScreen and dist < getgenv().Aimbot.MaxDistance then
+                local fovDist = (Vector2.new(screenPos.X, screenPos.Y) - Camera.ViewportSize/2).Magnitude
+                if fovDist < getgenv().Aimbot.FOV and fovDist < shortest then
+                    closest = part
+                    shortest = fovDist
+                end
+            end
+        end
+    end
+
+    if closest then
+        local direction = (closest.Position - Camera.CFrame.Position).Unit
+        Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, Camera.CFrame.Position + direction), getgenv().Aimbot.AimSpeed)
+    end
+end)
+
+-- Auto Save no fechar
+game:BindToClose(saveConfig)
