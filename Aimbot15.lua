@@ -1,5 +1,5 @@
 --==================================
--- AIMBOT V3 - GUI + MELHORIAS + WALLHACK CONFIGURÁVEL
+-- AIMBOT V3 - GUI MODERNA + MELHORIAS + WALLHACK CONFIGURÁVEL
 --==================================
 
 if game:GetService("StarterGui") then
@@ -10,7 +10,6 @@ if game:GetService("StarterGui") then
     })
 end
 
--- Serviços do Roblox
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -42,10 +41,9 @@ getgenv().Aimbot = {
         Visible = true
     },
     WallhackEnabled = false,
-    WallhackMaxDistance = 500, -- Distância configurável wallhack
+    WallhackMaxDistance = 500,
 }
 
--- Carregar configurações salvas
 local configFile = "aimbot_config.json"
 if readfile and isfile and isfile(configFile) then
     local data = HttpService:JSONDecode(readfile(configFile))
@@ -53,225 +51,302 @@ if readfile and isfile and isfile(configFile) then
 end
 
 --==============================
--- GUI (Interface)
+-- GUI MODERNA
 --==============================
 
-local UserInputService = game:GetService("UserInputService") -- já estava declarado, mas seguro
+-- Remove GUI antiga
+if game.CoreGui:FindFirstChild("DogaoRipGui") then
+    game.CoreGui.DogaoRipGui:Destroy()
+end
 
-local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "DogaoRipGui"
+ScreenGui.Parent = game.CoreGui
+ScreenGui.ResetOnSpawn = false
 
-local Frame = Instance.new("Frame", ScreenGui)
-Frame.Size = UDim2.new(0, 300, 0, 400)
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 320, 0, 440)
 Frame.Position = UDim2.new(0.02, 0, 0.15, 0)
-Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+Frame.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
 Frame.BorderSizePixel = 0
 Frame.AnchorPoint = Vector2.new(0, 0)
 Frame.Active = true
 Frame.Draggable = true
+Frame.Parent = ScreenGui
 
--- Sombra (shadow effect)
+local Corner = Instance.new("UICorner")
+Corner.CornerRadius = UDim.new(0, 12)
+Corner.Parent = Frame
+
 local Shadow = Instance.new("ImageLabel", Frame)
-Shadow.Size = UDim2.new(1, 10, 1, 10)
-Shadow.Position = UDim2.new(0, -5, 0, -5)
+Shadow.Size = UDim2.new(1, 15, 1, 15)
+Shadow.Position = UDim2.new(0, -7, 0, -7)
 Shadow.BackgroundTransparency = 1
 Shadow.Image = "rbxassetid://3570695787"
 Shadow.ImageColor3 = Color3.new(0, 0, 0)
-Shadow.ImageTransparency = 0.7
+Shadow.ImageTransparency = 0.75
 Shadow.ScaleType = Enum.ScaleType.Slice
 Shadow.SliceCenter = Rect.new(100, 100, 100, 100)
+Shadow.ZIndex = 0
 
--- Título
-local Title = Instance.new("TextLabel", Frame)
-Title.Size = UDim2.new(1, 0, 0, 40)
-Title.BackgroundTransparency = 1
-Title.Text = "🐶 Dogao RIP V3"
-Title.TextColor3 = Color3.fromRGB(255, 180, 60)
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 28
-Title.TextStrokeTransparency = 0.8
-Title.TextScaled = true
+local TitleBar = Instance.new("Frame", Frame)
+TitleBar.Size = UDim2.new(1, 0, 0, 45)
+TitleBar.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
+TitleBar.BorderSizePixel = 0
 
--- Botão de Minimizar
-local minimizeButton = Instance.new("TextButton", Frame)
-minimizeButton.Size = UDim2.new(0, 30, 0, 30)
-minimizeButton.Position = UDim2.new(1, -70, 0, 5)
-minimizeButton.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
-minimizeButton.Text = "-"
-minimizeButton.Font = Enum.Font.GothamBold
-minimizeButton.TextColor3 = Color3.new(1, 1, 1)
-minimizeButton.TextSize = 18
-minimizeButton.BorderSizePixel = 0
+local TitleText = Instance.new("TextLabel", TitleBar)
+TitleText.Text = "🐶 Dogao RIP V3"
+TitleText.TextColor3 = Color3.fromRGB(255, 180, 60)
+TitleText.Font = Enum.Font.GothamBold
+TitleText.TextSize = 24
+TitleText.BackgroundTransparency = 1
+TitleText.Size = UDim2.new(1, -80, 1, 0)
+TitleText.Position = UDim2.new(0, 10, 0, 0)
+TitleText.TextXAlignment = Enum.TextXAlignment.Left
 
--- Botão de Fechar (ocultar GUI)
-local closeButton = Instance.new("TextButton", Frame)
-closeButton.Size = UDim2.new(0, 30, 0, 30)
-closeButton.Position = UDim2.new(1, -35, 0, 5)
-closeButton.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-closeButton.Text = "X"
-closeButton.Font = Enum.Font.GothamBold
-closeButton.TextColor3 = Color3.new(1, 1, 1)
-closeButton.TextSize = 18
-closeButton.BorderSizePixel = 0
+local CloseBtn = Instance.new("TextButton", TitleBar)
+CloseBtn.Size = UDim2.new(0, 40, 0, 30)
+CloseBtn.Position = UDim2.new(1, -45, 0, 7)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+CloseBtn.Text = "✕"
+CloseBtn.TextColor3 = Color3.new(1,1,1)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 22
+CloseBtn.AutoButtonColor = false
+CloseBtn.BorderSizePixel = 0
+CloseBtn.AnchorPoint = Vector2.new(0.5, 0.5)
+CloseBtn.Name = "CloseButton"
 
--- Minimizar funcionalidade
-local isMinimized = false
-minimizeButton.MouseButton1Click:Connect(function()
-    isMinimized = not isMinimized
-    for _, child in pairs(Frame:GetChildren()) do
-        if child ~= Title and child ~= minimizeButton and child ~= closeButton and child.ClassName ~= "UIListLayout" then
-            child.Visible = not isMinimized
-        end
-    end
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(0, 8)
+closeCorner.Parent = CloseBtn
+
+CloseBtn.MouseEnter:Connect(function()
+    CloseBtn.BackgroundColor3 = Color3.fromRGB(220, 80, 80)
 end)
-
--- Ocultar ao clicar em X
-closeButton.MouseButton1Click:Connect(function()
+CloseBtn.MouseLeave:Connect(function()
+    CloseBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+end)
+CloseBtn.MouseButton1Click:Connect(function()
     ScreenGui.Enabled = false
 end)
 
--- Pressionar tecla Insert para mostrar/ocultar GUI
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
-    if input.KeyCode == Enum.KeyCode.Insert then
-        ScreenGui.Enabled = not ScreenGui.Enabled
-    end
+local MinimizeBtn = Instance.new("TextButton", TitleBar)
+MinimizeBtn.Size = UDim2.new(0, 40, 0, 30)
+MinimizeBtn.Position = UDim2.new(1, -90, 0, 7)
+MinimizeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+MinimizeBtn.Text = "—"
+MinimizeBtn.TextColor3 = Color3.new(1,1,1)
+MinimizeBtn.Font = Enum.Font.GothamBold
+MinimizeBtn.TextSize = 28
+MinimizeBtn.AutoButtonColor = false
+MinimizeBtn.BorderSizePixel = 0
+MinimizeBtn.AnchorPoint = Vector2.new(0.5, 0.5)
+MinimizeBtn.Name = "MinimizeButton"
+
+local minCorner = Instance.new("UICorner")
+minCorner.CornerRadius = UDim.new(0, 8)
+minCorner.Parent = MinimizeBtn
+
+MinimizeBtn.MouseEnter:Connect(function()
+    MinimizeBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 90)
+end)
+MinimizeBtn.MouseLeave:Connect(function()
+    MinimizeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
 end)
 
+local isMinimized = false
+MinimizeBtn.MouseButton1Click:Connect(function()
+    isMinimized = not isMinimized
+    for _, child in ipairs(Frame:GetChildren()) do
+        if child ~= TitleBar and child.Name ~= "Shadow" then
+            child.Visible = not isMinimized
+        end
+    end
+    Frame.Size = isMinimized and UDim2.new(0, 320, 0, 50) or UDim2.new(0, 320, 0, 440)
+end)
 
--- Função para criar Toggle Button estilizado
-local function createToggle(name, parent, initialValue, positionY)
-    local btnFrame = Instance.new("Frame", parent)
-    btnFrame.Size = UDim2.new(1, -20, 0, 40)
-    btnFrame.Position = UDim2.new(0, 10, 0, positionY)
-    btnFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-    btnFrame.BorderSizePixel = 0
-    btnFrame.ClipsDescendants = true
+local ContentFrame = Instance.new("ScrollingFrame", Frame)
+ContentFrame.Size = UDim2.new(1, -20, 1, -55)
+ContentFrame.Position = UDim2.new(0, 10, 0, 45)
+ContentFrame.BackgroundTransparency = 1
+ContentFrame.BorderSizePixel = 0
+ContentFrame.CanvasSize = UDim2.new(0,0,0,0)
+ContentFrame.ScrollBarThickness = 8
+ContentFrame.VerticalScrollBarInset = Enum.ScrollBarInset.Always
+ContentFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 
-    local label = Instance.new("TextLabel", btnFrame)
+local UIList = Instance.new("UIListLayout", ContentFrame)
+UIList.SortOrder = Enum.SortOrder.LayoutOrder
+UIList.Padding = UDim.new(0, 12)
+
+local function createToggle(name, initialValue)
+    local toggleFrame = Instance.new("Frame")
+    toggleFrame.Size = UDim2.new(1, 0, 0, 45)
+    toggleFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+    toggleFrame.BorderSizePixel = 0
+    toggleFrame.Name = name .. "Toggle"
+    toggleFrame.ClipsDescendants = true
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = toggleFrame
+
+    local label = Instance.new("TextLabel", toggleFrame)
     label.Text = name
     label.Size = UDim2.new(0.7, 0, 1, 0)
+    label.Position = UDim2.new(0, 15, 0, 0)
     label.BackgroundTransparency = 1
     label.TextColor3 = Color3.fromRGB(230, 230, 230)
     label.Font = Enum.Font.Gotham
     label.TextSize = 18
     label.TextXAlignment = Enum.TextXAlignment.Left
 
-    local toggleBtn = Instance.new("TextButton", btnFrame)
-    toggleBtn.Size = UDim2.new(0, 50, 0, 30)
-    toggleBtn.Position = UDim2.new(0.75, 0, 0.1, 0)
-    toggleBtn.BackgroundColor3 = initialValue and Color3.fromRGB(100, 220, 100) or Color3.fromRGB(180, 60, 60)
-    toggleBtn.Text = initialValue and "ON" or "OFF"
-    toggleBtn.Font = Enum.Font.GothamBold
-    toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    toggleBtn.TextSize = 16
-    toggleBtn.AutoButtonColor = false
-    toggleBtn.ClipsDescendants = true
+    local btn = Instance.new("TextButton", toggleFrame)
+    btn.Size = UDim2.new(0, 60, 0, 30)
+    btn.Position = UDim2.new(1, -70, 0, 7)
+    btn.BackgroundColor3 = initialValue and Color3.fromRGB(100, 220, 100) or Color3.fromRGB(180, 60, 60)
+    btn.Text = initialValue and "ON" or "OFF"
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 16
+    btn.AutoButtonColor = false
+    btn.Name = "ToggleButton"
 
-    toggleBtn.MouseEnter:Connect(function()
-        toggleBtn.BackgroundColor3 = initialValue and Color3.fromRGB(80, 180, 80) or Color3.fromRGB(150, 40, 40)
+    local cornerBtn = Instance.new("UICorner")
+    cornerBtn.CornerRadius = UDim.new(0, 8)
+    cornerBtn.Parent = btn
+
+    btn.MouseEnter:Connect(function()
+        btn.BackgroundColor3 = initialValue and Color3.fromRGB(80, 180, 80) or Color3.fromRGB(150, 40, 40)
     end)
-    toggleBtn.MouseLeave:Connect(function()
-        toggleBtn.BackgroundColor3 = initialValue and Color3.fromRGB(100, 220, 100) or Color3.fromRGB(180, 60, 60)
+    btn.MouseLeave:Connect(function()
+        btn.BackgroundColor3 = initialValue and Color3.fromRGB(100, 220, 100) or Color3.fromRGB(180, 60, 60)
     end)
 
-    local toggled = initialValue
-    toggleBtn.MouseButton1Click:Connect(function()
-        toggled = not toggled
-        toggleBtn.BackgroundColor3 = toggled and Color3.fromRGB(100, 220, 100) or Color3.fromRGB(180, 60, 60)
-        toggleBtn.Text = toggled and "ON" or "OFF"
-        if name == "Wallhack" then
-            getgenv().Aimbot.WallhackEnabled = toggled
-        elseif name == "Team Check" then
-            getgenv().Aimbot.TeamCheck = toggled
-        elseif name == "Wall Check" then
-            getgenv().Aimbot.WallCheck = toggled
-        end
-    end)
+    return toggleFrame, btn
 end
 
--- Função para criar slider para números
-local function createSlider(name, parent, min, max, default, positionY, callback)
-    local sliderFrame = Instance.new("Frame", parent)
-    sliderFrame.Size = UDim2.new(1, -20, 0, 50)
-    sliderFrame.Position = UDim2.new(0, 10, 0, positionY)
-    sliderFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+local function createSlider(name, min, max, default, onChange)
+    local sliderFrame = Instance.new("Frame")
+    sliderFrame.Size = UDim2.new(1, 0, 0, 60)
+    sliderFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
     sliderFrame.BorderSizePixel = 0
+    sliderFrame.ClipsDescendants = true
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = sliderFrame
 
     local label = Instance.new("TextLabel", sliderFrame)
-    label.Text = name .. ": " .. tostring(default)
-    label.Size = UDim2.new(1, 0, 0, 20)
+    label.Text = string.format("%s: %d", name, default)
+    label.Size = UDim2.new(1, -30, 0, 20)
+    label.Position = UDim2.new(0, 15, 0, 5)
     label.BackgroundTransparency = 1
-    label.TextColor3 = Color3.fromRGB(220, 220, 220)
+    label.TextColor3 = Color3.fromRGB(230, 230, 230)
     label.Font = Enum.Font.Gotham
-    label.TextSize = 16
+    label.TextSize = 17
     label.TextXAlignment = Enum.TextXAlignment.Left
 
-    local slider = Instance.new("Frame", sliderFrame)
-    slider.Size = UDim2.new(1, -20, 0, 10)
-    slider.Position = UDim2.new(0, 10, 0, 30)
-    slider.BackgroundColor3 = Color3.fromRGB(70, 70, 80)
-    slider.BorderSizePixel = 0
+    local sliderBar = Instance.new("Frame", sliderFrame)
+    sliderBar.Size = UDim2.new(1, -30, 0, 10)
+    sliderBar.Position = UDim2.new(0, 15, 0, 35)
+    sliderBar.BackgroundColor3 = Color3.fromRGB(70, 70, 80)
+    sliderBar.BorderSizePixel = 0
+    sliderBar.ClipsDescendants = true
 
-    local fill = Instance.new("Frame", slider)
-    fill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
-    fill.BackgroundColor3 = Color3.fromRGB(255, 180, 60)
-    fill.BorderSizePixel = 0
+    local sliderFill = Instance.new("Frame", sliderBar)
+    sliderFill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+    sliderFill.BackgroundColor3 = Color3.fromRGB(255, 180, 60)
+    sliderFill.BorderSizePixel = 0
 
-    local function updateValue(x)
-        local relativeX = math.clamp(x - slider.AbsolutePosition.X, 0, slider.AbsoluteSize.X)
-        local percent = relativeX / slider.AbsoluteSize.X
+    local sliderCorner = Instance.new("UICorner")
+    sliderCorner.CornerRadius = UDim.new(0, 8)
+    sliderCorner.Parent = sliderFill
+
+    local dragging = false
+
+    local function updateSlider(x)
+        local relativeX = math.clamp(x - sliderBar.AbsolutePosition.X, 0, sliderBar.AbsoluteSize.X)
+        local percent = relativeX / sliderBar.AbsoluteSize.X
         local value = math.floor(min + percent * (max - min))
-        fill.Size = UDim2.new(percent, 0, 1, 0)
-        label.Text = name .. ": " .. tostring(value)
-        callback(value)
+        sliderFill.Size = UDim2.new(percent, 0, 1, 0)
+        label.Text = string.format("%s: %d", name, value)
+        onChange(value)
     end
 
-    slider.InputBegan:Connect(function(input)
+    sliderBar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            updateValue(input.Position.X)
-            local conn
-            conn = UserInputService.InputChanged:Connect(function(inputMove)
-                if inputMove.UserInputType == Enum.UserInputType.MouseMovement then
-                    updateValue(inputMove.Position.X)
-                end
-            end)
-            UserInputService.InputEnded:Wait()
-            conn:Disconnect()
+            dragging = true
+            updateSlider(input.Position.X)
         end
     end)
 
-    slider.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then
-            updateValue(input.Position.X)
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            updateSlider(input.Position.X)
         end
+    end)
+
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+
+    return sliderFrame
+end
+
+-- Criar controles e adicionar ao ContentFrame
+local toggles = {
+    {"Wallhack", getgenv().Aimbot.WallhackEnabled, function(val) getgenv().Aimbot.WallhackEnabled = val end},
+    {"Team Check", getgenv().Aimbot.TeamCheck, function(val) getgenv().Aimbot.TeamCheck = val end},
+    {"Wall Check", getgenv().Aimbot.WallCheck, function(val) getgenv().Aimbot.WallCheck = val end},
+}
+
+local y = 10
+for i, t in ipairs(toggles) do
+    local frame, btn = createToggle(t[1], ContentFrame, t[2])
+    frame.Parent = ContentFrame
+    btn.MouseButton1Click:Connect(function()
+        local newVal = btn.Text == "OFF"
+        btn.BackgroundColor3 = newVal and Color3.fromRGB(100, 220, 100) or Color3.fromRGB(180, 60, 60)
+        btn.Text = newVal and "ON" or "OFF"
+        t[3](newVal)
     end)
 end
 
--- Criar toggles
-createToggle("Wallhack", Frame, getgenv().Aimbot.WallhackEnabled, 50)
-createToggle("Team Check", Frame, getgenv().Aimbot.TeamCheck, 100)
-createToggle("Wall Check", Frame, getgenv().Aimbot.WallCheck, 150)
-
--- Criar sliders para distâncias
-createSlider("Aimbot Max Distance", Frame, 50, 500, getgenv().Aimbot.MaxDistance, 210, function(value)
+local maxDistanceSlider = createSlider("Aimbot Max Distance", 50, 500, getgenv().Aimbot.MaxDistance, function(value)
     getgenv().Aimbot.MaxDistance = value
 end)
+maxDistanceSlider.Parent = ContentFrame
 
-createSlider("Wallhack Max Distance", Frame, 50, 1000, getgenv().Aimbot.WallhackMaxDistance, 270, function(value)
+local wallhackDistanceSlider = createSlider("Wallhack Max Distance", 50, 1000, getgenv().Aimbot.WallhackMaxDistance, function(value)
     getgenv().Aimbot.WallhackMaxDistance = value
 end)
+wallhackDistanceSlider.Parent = ContentFrame
 
--- Priority Button (alternar entre FOV e Distância)
-local priorityBtn = Instance.new("TextButton", Frame)
-priorityBtn.Size = UDim2.new(1, -20, 0, 40)
-priorityBtn.Position = UDim2.new(0, 10, 0, 330)
-priorityBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+local priorityBtn = Instance.new("TextButton")
+priorityBtn.Size = UDim2.new(1, 0, 0, 45)
+priorityBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
 priorityBtn.BorderSizePixel = 0
-priorityBtn.TextColor3 = Color3.fromRGB(255, 180, 60)
 priorityBtn.Font = Enum.Font.GothamBold
-priorityBtn.TextSize = 18
+priorityBtn.TextSize = 20
+priorityBtn.TextColor3 = Color3.fromRGB(255, 180, 60)
 priorityBtn.Text = "Prioridade: " .. getgenv().Aimbot.Priority
+priorityBtn.ClipsDescendants = true
+
+local cornerPriority = Instance.new("UICorner")
+cornerPriority.CornerRadius = UDim.new(0, 8)
+cornerPriority.Parent = priorityBtn
+
+priorityBtn.MouseEnter:Connect(function()
+    priorityBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+end)
+priorityBtn.MouseLeave:Connect(function()
+    priorityBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+end)
+
 priorityBtn.MouseButton1Click:Connect(function()
     if getgenv().Aimbot.Priority == "FOV" then
         getgenv().Aimbot.Priority = "Distância"
@@ -279,6 +354,13 @@ priorityBtn.MouseButton1Click:Connect(function()
         getgenv().Aimbot.Priority = "FOV"
     end
     priorityBtn.Text = "Prioridade: " .. getgenv().Aimbot.Priority
+end)
+
+priorityBtn.Parent = ContentFrame
+
+-- Atualizar canvas size para scroll
+UIList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    ContentFrame.CanvasSize = UDim2.new(0, 0, 0, UIList.AbsoluteContentSize.Y + 20)
 end)
 
 --==============================
@@ -295,7 +377,7 @@ local function updateFOV()
 end
 
 --==============================
--- FUNÇÕES DE MIRA
+-- FUNÇÕES DE MIRA (igual ao seu original)
 --==============================
 local function isAlive(player)
     local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
@@ -548,5 +630,13 @@ end)
 game:BindToClose(function()
     if writefile then
         writefile(configFile, HttpService:JSONEncode(getgenv().Aimbot))
+    end
+end)
+
+-- Atalho para mostrar/ocultar GUI com Insert
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.Insert then
+        ScreenGui.Enabled = not ScreenGui.Enabled
     end
 end)
