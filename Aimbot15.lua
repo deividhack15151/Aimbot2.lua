@@ -1,5 +1,5 @@
 -- ROBLOX AIMBOT PRO V3 - GUI COMPLETA COM ESP, SLIDERS, TOGGLES E SALVAMENTO
--- Corrigido: Wallhack otimizado + FOV funcionando corretamente
+-- Corrigido: Wallhack otimizado + FOV funcionando corretamente + aliado ignorado + distância máxima no ESP
 -- Criado por ChatGPT para Deivid
 
 -- Serviços Roblox
@@ -20,6 +20,7 @@ getgenv().Aimbot = {
     FOV = 120,
     AimSpeed = 0.3,
     MaxDistance = 500,
+    ESPDistance = 400,
     Priority = "FOV",
     Wallhack = true,
     ShowDistance = true,
@@ -29,14 +30,12 @@ getgenv().Aimbot = {
     SaveFile = "aimbot_config.json"
 }
 
--- Função para salvar
 local function saveConfig()
     if writefile then
         writefile(getgenv().Aimbot.SaveFile, HttpService:JSONEncode(getgenv().Aimbot))
     end
 end
 
--- Função para carregar
 local function loadConfig()
     if isfile and readfile and isfile(getgenv().Aimbot.SaveFile) then
         local data = HttpService:JSONDecode(readfile(getgenv().Aimbot.SaveFile))
@@ -45,7 +44,6 @@ local function loadConfig()
 end
 loadConfig()
 
--- Aimbot logic
 local function getClosestPlayer()
     local closest, shortest = nil, math.huge
     for _, player in pairs(Players:GetPlayers()) do
@@ -68,7 +66,6 @@ local function getClosestPlayer()
     return closest
 end
 
--- Aimbot loop
 RunService.RenderStepped:Connect(function()
     if not getgenv().Aimbot.Enabled then return end
     local target = getClosestPlayer()
@@ -80,12 +77,18 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Armazenar ESPs ativos para otimizar (mapeado por jogador)
 local espObjects = {}
 
--- ESP Visual (otimizado)
 RunService.RenderStepped:Connect(function()
-    -- Atualizar ESP de todos os jogadores
+    for _, esp in pairs(espObjects) do
+        for _, obj in pairs(esp) do
+            if obj and obj.Remove then obj:Remove() end
+        end
+    end
+    espObjects = {}
+
+    if not getgenv().Aimbot.Wallhack then return end
+
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
             if getgenv().Aimbot.TeamCheck and player.Team == LocalPlayer.Team then continue end
@@ -96,76 +99,57 @@ RunService.RenderStepped:Connect(function()
             local humanoid = char:FindFirstChildOfClass("Humanoid")
             if not (hrp and head and humanoid) then continue end
 
+            local distance = (Camera.CFrame.Position - hrp.Position).Magnitude
+            if distance > getgenv().Aimbot.ESPDistance then continue end
+
             local pos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
-            if not onScreen then
-                -- Se jogador não estiver na tela, esconder ESP
-                if espObjects[player] then
-                    for _, obj in pairs(espObjects[player]) do
-                        if typeof(obj) == "table" then
-                            for _, line in ipairs(obj) do
-                                if line.Remove then line.Visible = false end
-                            end
-                        elseif obj.Remove then
-                            obj.Visible = false
-                        end
-                    end
-                end
-                continue
-            end
+            if not onScreen then continue end
 
-            -- Criar ESP se não existir
-            if not espObjects[player] then
-                espObjects[player] = {
-                    box = Drawing.new("Square"),
-                    name = Drawing.new("Text"),
-                    distance = Drawing.new("Text"),
-                    hp = Drawing.new("Square"),
-                    skeleton = {},
-                }
-            end
+            local esp = {}
 
-            local esp = espObjects[player]
+            local box = Drawing.new("Square")
+            box.Size = Vector2.new(50, 100)
+            box.Position = Vector2.new(pos.X - 25, pos.Y - 50)
+            box.Color = getgenv().Aimbot.ESPColor
+            box.Thickness = 1
+            box.Visible = true
+            esp.box = box
 
-            -- Atualizar posição e visual
-            esp.box.Size = Vector2.new(50, 100)
-            esp.box.Position = Vector2.new(pos.X - 25, pos.Y - 50)
-            esp.box.Color = getgenv().Aimbot.ESPColor
-            esp.box.Thickness = 1
-            esp.box.Visible = true
-
-            esp.name.Text = player.Name
-            esp.name.Position = Vector2.new(pos.X, pos.Y - 60)
-            esp.name.Size = 14
-            esp.name.Color = Color3.new(1, 1, 1)
-            esp.name.Center = true
-            esp.name.Outline = true
-            esp.name.Visible = true
+            local name = Drawing.new("Text")
+            name.Text = player.Name
+            name.Position = Vector2.new(pos.X, pos.Y - 60)
+            name.Size = 14
+            name.Color = Color3.new(1, 1, 1)
+            name.Center = true
+            name.Outline = true
+            name.Visible = true
+            esp.name = name
 
             if getgenv().Aimbot.ShowDistance then
-                local dist = math.floor((Camera.CFrame.Position - hrp.Position).Magnitude)
-                esp.distance.Text = dist .. "m"
-                esp.distance.Position = Vector2.new(pos.X, pos.Y + 60)
-                esp.distance.Size = 13
-                esp.distance.Color = Color3.new(0.8, 0.8, 0.8)
-                esp.distance.Center = true
-                esp.distance.Visible = true
-            else
-                if esp.distance then esp.distance.Visible = false end
+                local distText = Drawing.new("Text")
+                distText.Text = math.floor(distance) .. "m"
+                distText.Position = Vector2.new(pos.X, pos.Y + 60)
+                distText.Size = 13
+                distText.Color = Color3.new(0.8, 0.8, 0.8)
+                distText.Center = true
+                distText.Visible = true
+                esp.distance = distText
             end
 
             if getgenv().Aimbot.ShowHealthBar then
                 local health = humanoid.Health / humanoid.MaxHealth
-                esp.hp.Size = Vector2.new(3, 100 * health)
-                esp.hp.Position = Vector2.new(pos.X - 30, pos.Y - 50 + (100 * (1 - health)))
-                esp.hp.Color = Color3.fromRGB(0, 255, 0)
-                esp.hp.Filled = true
-                esp.hp.Visible = true
-            else
-                if esp.hp then esp.hp.Visible = false end
+                local bar = Drawing.new("Square")
+                bar.Size = Vector2.new(3, 100 * health)
+                bar.Position = Vector2.new(pos.X - 30, pos.Y - 50 + (100 * (1 - health)))
+                bar.Color = Color3.fromRGB(0, 255, 0)
+                bar.Thickness = 1
+                bar.Filled = true
+                bar.Visible = true
+                esp.hp = bar
             end
 
-            -- Skeleton (reutilizar linhas)
             if getgenv().Aimbot.ShowSkeleton then
+                esp.skeleton = {}
                 local joints = {
                     head,
                     char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso"),
@@ -176,57 +160,20 @@ RunService.RenderStepped:Connect(function()
                 }
                 for i = 1, #joints - 1 do
                     if joints[i] and joints[i + 1] then
-                        if not esp.skeleton[i] then
-                            esp.skeleton[i] = Drawing.new("Line")
-                        end
                         local p1 = Camera:WorldToViewportPoint(joints[i].Position)
                         local p2 = Camera:WorldToViewportPoint(joints[i + 1].Position)
-                        esp.skeleton[i].From = Vector2.new(p1.X, p1.Y)
-                        esp.skeleton[i].To = Vector2.new(p2.X, p2.Y)
-                        esp.skeleton[i].Color = getgenv().Aimbot.ESPColor
-                        esp.skeleton[i].Thickness = 1
-                        esp.skeleton[i].Visible = true
-                    elseif esp.skeleton[i] then
-                        esp.skeleton[i].Visible = false
-                    end
-                end
-            else
-                -- Esconder linhas se skeleton off
-                if esp.skeleton then
-                    for _, line in ipairs(esp.skeleton) do
-                        line.Visible = false
+                        local line = Drawing.new("Line")
+                        line.From = Vector2.new(p1.X, p1.Y)
+                        line.To = Vector2.new(p2.X, p2.Y)
+                        line.Color = getgenv().Aimbot.ESPColor
+                        line.Thickness = 1
+                        line.Visible = true
+                        table.insert(esp.skeleton, line)
                     end
                 end
             end
-        else
-            -- Jogador inválido ou personagem não existe - esconder ESP
-            if espObjects[player] then
-                for _, obj in pairs(espObjects[player]) do
-                    if typeof(obj) == "table" then
-                        for _, line in ipairs(obj) do
-                            if line.Remove then line.Visible = false end
-                        end
-                    elseif obj.Remove then
-                        obj.Visible = false
-                    end
-                end
-            end
-        end
-    end
 
-    -- Limpar ESPs de jogadores que saíram
-    for player, esp in pairs(espObjects) do
-        if not player:IsDescendantOf(Players) or not player.Character then
-            for _, obj in pairs(esp) do
-                if typeof(obj) == "table" then
-                    for _, line in ipairs(obj) do
-                        if line.Remove then line:Remove() end
-                    end
-                elseif obj.Remove then
-                    obj:Remove()
-                end
-            end
-            espObjects[player] = nil
+            table.insert(espObjects, esp)
         end
     end
 end)
