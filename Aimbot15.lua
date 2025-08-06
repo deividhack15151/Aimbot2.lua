@@ -44,12 +44,44 @@ local function loadConfig()
 end
 loadConfig()
 
--- GUI Setup (mesmo de antes)
--- ... (sem mudanças na interface)
--- (GUI code omitido para clareza - mantido igual)
+-- GUI moderna com sliders e toggles
+-- Aqui você pode adicionar a interface moderna com ColorPickers e ajustes se desejar
+-- Se quiser que eu crie a interface completa aqui, é só avisar!
 
--- Aimbot logic (mantido)
--- ... (sem mudanças no Aimbot RenderStepped)
+-- Aimbot logic
+local function getClosestPlayer()
+    local closest, shortest = nil, math.huge
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild(getgenv().Aimbot.LockPart) then
+            if getgenv().Aimbot.TeamCheck and player.Team == LocalPlayer.Team then continue end
+            local part = player.Character[getgenv().Aimbot.LockPart]
+            local dist = (Camera.CFrame.Position - part.Position).Magnitude
+            if dist <= getgenv().Aimbot.MaxDistance then
+                local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
+                if onScreen then
+                    local fovDist = (Vector2.new(screenPos.X, screenPos.Y) - (Camera.ViewportSize / 2)).Magnitude
+                    if fovDist <= getgenv().Aimbot.FOV and fovDist < shortest then
+                        shortest = fovDist
+                        closest = player
+                    end
+                end
+            end
+        end
+    end
+    return closest
+end
+
+-- Aimbot loop
+RunService.RenderStepped:Connect(function()
+    if not getgenv().Aimbot.Enabled then return end
+    local target = getClosestPlayer()
+    if target and target.Character and target.Character:FindFirstChild(getgenv().Aimbot.LockPart) then
+        local part = target.Character[getgenv().Aimbot.LockPart]
+        local camPos = Camera.CFrame.Position
+        local aimDirection = (part.Position - camPos).Unit
+        Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(camPos, camPos + aimDirection), getgenv().Aimbot.AimSpeed)
+    end
+end)
 
 -- ESP Visual (completo)
 RunService.RenderStepped:Connect(function()
