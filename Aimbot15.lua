@@ -81,7 +81,7 @@ local espObjects = {}
 
 RunService.RenderStepped:Connect(function()
     for player, esp in pairs(espObjects) do
-        if not player:IsDescendantOf(Players) or not player.Character then
+        if not player:IsDescendantOf(Players) or not player.Character or not player.Character:FindFirstChild("Humanoid") or player.Character:FindFirstChild("Humanoid").Health <= 0 then
             for _, obj in pairs(esp) do
                 if typeof(obj) == "table" then
                     for _, line in ipairs(obj) do
@@ -100,12 +100,13 @@ RunService.RenderStepped:Connect(function()
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
             if getgenv().Aimbot.TeamCheck and player.Team == LocalPlayer.Team then continue end
+            local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+            if not humanoid or humanoid.Health <= 0 then continue end
 
             local char = player.Character
             local hrp = char:FindFirstChild("HumanoidRootPart")
             local head = char:FindFirstChild("Head")
-            local humanoid = char:FindFirstChildOfClass("Humanoid")
-            if not (hrp and head and humanoid) then continue end
+            if not (hrp and head) then continue end
 
             local distance = (Camera.CFrame.Position - hrp.Position).Magnitude
             if distance > getgenv().Aimbot.ESPDistance then continue end
