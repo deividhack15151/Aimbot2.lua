@@ -1,5 +1,5 @@
 --==================================
--- AIMBOT V3 - GUI + SPEED MOD + WALLHACK CONFIGURÁVEL
+-- AIMBOT V3 - GUI + MELHORIAS + WALLHACK CONFIGURÁVEL
 --==================================
 
 if game:GetService("StarterGui") then
@@ -10,6 +10,7 @@ if game:GetService("StarterGui") then
     })
 end
 
+-- Serviços do Roblox
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -41,42 +42,35 @@ getgenv().Aimbot = {
         Visible = true
     },
     WallhackEnabled = false,
-    WallhackMaxDistance = 500,
-}
-
-getgenv().SpeedMod = {
-    Enabled = false,
-    DefaultWalkSpeed = 16,
-    Multiplier = 1,
+    WallhackMaxDistance = 500, -- Distância configurável wallhack
 }
 
 -- Carregar configurações salvas
 local configFile = "aimbot_config.json"
 if readfile and isfile and isfile(configFile) then
     local data = HttpService:JSONDecode(readfile(configFile))
-    if data.Aimbot then
-        for k, v in pairs(data.Aimbot) do getgenv().Aimbot[k] = v end
-    end
-    if data.SpeedMod then
-        for k, v in pairs(data.SpeedMod) do getgenv().SpeedMod[k] = v end
-    end
+    for k, v in pairs(data) do getgenv().Aimbot[k] = v end
 end
 
 --==============================
--- GUI
+-- GUI (Interface)
 --==============================
+
+local UserInputService = game:GetService("UserInputService") -- já estava declarado, mas seguro
 
 local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
 ScreenGui.Name = "DogaoRipGui"
 
 local Frame = Instance.new("Frame", ScreenGui)
-Frame.Size = UDim2.new(0, 300, 0, 450)
+Frame.Size = UDim2.new(0, 300, 0, 400)
 Frame.Position = UDim2.new(0.02, 0, 0.15, 0)
 Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
 Frame.BorderSizePixel = 0
+Frame.AnchorPoint = Vector2.new(0, 0)
 Frame.Active = true
 Frame.Draggable = true
 
+-- Sombra (shadow effect)
 local Shadow = Instance.new("ImageLabel", Frame)
 Shadow.Size = UDim2.new(1, 10, 1, 10)
 Shadow.Position = UDim2.new(0, -5, 0, -5)
@@ -87,6 +81,7 @@ Shadow.ImageTransparency = 0.7
 Shadow.ScaleType = Enum.ScaleType.Slice
 Shadow.SliceCenter = Rect.new(100, 100, 100, 100)
 
+-- Título
 local Title = Instance.new("TextLabel", Frame)
 Title.Size = UDim2.new(1, 0, 0, 40)
 Title.BackgroundTransparency = 1
@@ -97,6 +92,7 @@ Title.TextSize = 28
 Title.TextStrokeTransparency = 0.8
 Title.TextScaled = true
 
+-- Botão de Minimizar
 local minimizeButton = Instance.new("TextButton", Frame)
 minimizeButton.Size = UDim2.new(0, 30, 0, 30)
 minimizeButton.Position = UDim2.new(1, -70, 0, 5)
@@ -107,6 +103,7 @@ minimizeButton.TextColor3 = Color3.new(1, 1, 1)
 minimizeButton.TextSize = 18
 minimizeButton.BorderSizePixel = 0
 
+-- Botão de Fechar (ocultar GUI)
 local closeButton = Instance.new("TextButton", Frame)
 closeButton.Size = UDim2.new(0, 30, 0, 30)
 closeButton.Position = UDim2.new(1, -35, 0, 5)
@@ -117,6 +114,7 @@ closeButton.TextColor3 = Color3.new(1, 1, 1)
 closeButton.TextSize = 18
 closeButton.BorderSizePixel = 0
 
+-- Minimizar funcionalidade
 local isMinimized = false
 minimizeButton.MouseButton1Click:Connect(function()
     isMinimized = not isMinimized
@@ -127,10 +125,12 @@ minimizeButton.MouseButton1Click:Connect(function()
     end
 end)
 
+-- Ocultar ao clicar em X
 closeButton.MouseButton1Click:Connect(function()
     ScreenGui.Enabled = false
 end)
 
+-- Pressionar tecla Insert para mostrar/ocultar GUI
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.KeyCode == Enum.KeyCode.Insert then
@@ -138,8 +138,9 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- Funções para criar toggles e sliders
-local function createToggle(name, parent, initialValue, positionY, callback)
+
+-- Função para criar Toggle Button estilizado
+local function createToggle(name, parent, initialValue, positionY)
     local btnFrame = Instance.new("Frame", parent)
     btnFrame.Size = UDim2.new(1, -20, 0, 40)
     btnFrame.Position = UDim2.new(0, 10, 0, positionY)
@@ -179,29 +180,36 @@ local function createToggle(name, parent, initialValue, positionY, callback)
         toggled = not toggled
         toggleBtn.BackgroundColor3 = toggled and Color3.fromRGB(100, 220, 100) or Color3.fromRGB(180, 60, 60)
         toggleBtn.Text = toggled and "ON" or "OFF"
-        callback(toggled)
+        if name == "Wallhack" then
+            getgenv().Aimbot.WallhackEnabled = toggled
+        elseif name == "Team Check" then
+            getgenv().Aimbot.TeamCheck = toggled
+        elseif name == "Wall Check" then
+            getgenv().Aimbot.WallCheck = toggled
+        end
     end)
 end
 
+-- Função para criar slider para números
 local function createSlider(name, parent, min, max, default, positionY, callback)
     local sliderFrame = Instance.new("Frame", parent)
-    sliderFrame.Size = UDim2.new(1, -20, 0, 35)
+    sliderFrame.Size = UDim2.new(1, -20, 0, 50)
     sliderFrame.Position = UDim2.new(0, 10, 0, positionY)
     sliderFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
     sliderFrame.BorderSizePixel = 0
 
     local label = Instance.new("TextLabel", sliderFrame)
     label.Text = name .. ": " .. tostring(default)
-    label.Size = UDim2.new(1, 0, 0, 18)
+    label.Size = UDim2.new(1, 0, 0, 20)
     label.BackgroundTransparency = 1
     label.TextColor3 = Color3.fromRGB(220, 220, 220)
     label.Font = Enum.Font.Gotham
-    label.TextSize = 14
+    label.TextSize = 16
     label.TextXAlignment = Enum.TextXAlignment.Left
 
     local slider = Instance.new("Frame", sliderFrame)
-    slider.Size = UDim2.new(1, -20, 0, 8)
-    slider.Position = UDim2.new(0, 10, 0, 20)
+    slider.Size = UDim2.new(1, -20, 0, 10)
+    slider.Position = UDim2.new(0, 10, 0, 30)
     slider.BackgroundColor3 = Color3.fromRGB(70, 70, 80)
     slider.BorderSizePixel = 0
 
@@ -240,33 +248,24 @@ local function createSlider(name, parent, min, max, default, positionY, callback
     end)
 end
 
--- Toggles do aimbot
-createToggle("Wallhack", Frame, getgenv().Aimbot.WallhackEnabled, 50, function(value)
-    getgenv().Aimbot.WallhackEnabled = value
-end)
+-- Criar toggles
+createToggle("Wallhack", Frame, getgenv().Aimbot.WallhackEnabled, 50)
+createToggle("Team Check", Frame, getgenv().Aimbot.TeamCheck, 100)
+createToggle("Wall Check", Frame, getgenv().Aimbot.WallCheck, 150)
 
-createToggle("Team Check", Frame, getgenv().Aimbot.TeamCheck, 100, function(value)
-    getgenv().Aimbot.TeamCheck = value
-end)
-
-createToggle("Wall Check", Frame, getgenv().Aimbot.WallCheck, 150, function(value)
-    getgenv().Aimbot.WallCheck = value
-end)
-
--- Slider para aimbot MaxDistance
+-- Criar sliders para distâncias
 createSlider("Aimbot Max Distance", Frame, 50, 500, getgenv().Aimbot.MaxDistance, 210, function(value)
     getgenv().Aimbot.MaxDistance = value
 end)
 
--- Slider para Wallhack MaxDistance
-createSlider("Wallhack Max Distance", Frame, 50, 1000, getgenv().Aimbot.WallhackMaxDistance, 260, function(value)
+createSlider("Wallhack Max Distance", Frame, 50, 1000, getgenv().Aimbot.WallhackMaxDistance, 270, function(value)
     getgenv().Aimbot.WallhackMaxDistance = value
 end)
 
--- Prioridade FOV / Distância
+-- Priority Button (alternar entre FOV e Distância)
 local priorityBtn = Instance.new("TextButton", Frame)
 priorityBtn.Size = UDim2.new(1, -20, 0, 40)
-priorityBtn.Position = UDim2.new(0, 10, 0, 310)
+priorityBtn.Position = UDim2.new(0, 10, 0, 330)
 priorityBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
 priorityBtn.BorderSizePixel = 0
 priorityBtn.TextColor3 = Color3.fromRGB(255, 180, 60)
@@ -280,16 +279,6 @@ priorityBtn.MouseButton1Click:Connect(function()
         getgenv().Aimbot.Priority = "FOV"
     end
     priorityBtn.Text = "Prioridade: " .. getgenv().Aimbot.Priority
-end)
-
--- Speed Mod Toggle
-createToggle("Speed Mod", Frame, getgenv().SpeedMod.Enabled, 360, function(value)
-    getgenv().SpeedMod.Enabled = value
-end)
-
--- Speed Multiplier Slider (1x até 50x ~ 750 WalkSpeed)
-createSlider("Speed Multiplier", Frame, 1, 50, getgenv().SpeedMod.Multiplier, 410, function(value)
-    getgenv().SpeedMod.Multiplier = value
 end)
 
 --==============================
@@ -381,7 +370,7 @@ local function aimAt(target)
 end
 
 --==============================
--- WALLHACK ESP (simplificado)
+-- WALLHACK MELHORADO LIMITADO DISTÂNCIA CONFIGURÁVEL
 --==============================
 local wallhackObjects = {}
 
@@ -413,98 +402,151 @@ local function createWallhackESP(player)
     return esp
 end
 
-local function updateWallhack()
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character and isAlive(player) and (not getgenv().Aimbot.TeamCheck or player.Team ~= LocalPlayer.Team) then
-            local part = player.Character:FindFirstChild(getgenv().Aimbot.LockPart)
-            if part and (player.Character.HumanoidRootPart.Position - Camera.CFrame.Position).Magnitude <= getgenv().Aimbot.WallhackMaxDistance then
-                local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
-                if onScreen then
-                    if not wallhackObjects[player] then
-                        wallhackObjects[player] = createWallhackESP(player)
-                    end
-                    local esp = wallhackObjects[player]
-                    local size = 50 -- Ajuste do tamanho do box (pode melhorar calculo)
+--==============================
+-- LOOP PRINCIPAL
+--==============================
+local holding = false
+local currentTarget = nil
 
-                    esp.box.Size = size
-                    esp.box.Position = Vector2.new(screenPos.X - size/2, screenPos.Y - size/2)
-                    esp.box.Visible = getgenv().Aimbot.WallhackEnabled
+UserInputService.InputBegan:Connect(function(input)
+    if input.UserInputType == getgenv().Aimbot.TriggerKey then
+        if getgenv().Aimbot.Toggle then
+            getgenv().Aimbot.Enabled = not getgenv().Aimbot.Enabled
+        else
+            holding = true
+        end
+    end
+end)
 
-                    esp.name.Position = Vector2.new(screenPos.X, screenPos.Y - size/2 - 15)
-                    esp.name.Visible = getgenv().Aimbot.WallhackEnabled
-                else
-                    if wallhackObjects[player] then
-                        wallhackObjects[player].box.Visible = false
-                        wallhackObjects[player].name.Visible = false
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == getgenv().Aimbot.TriggerKey and not getgenv().Aimbot.Toggle then
+        holding = false
+    end
+end)
+
+task.spawn(function()
+    while task.wait(0.05) do
+        if getgenv().Aimbot.Enabled or holding then
+            currentTarget = getClosestTarget()
+        else
+            currentTarget = nil
+        end
+    end
+end)
+
+RunService.RenderStepped:Connect(function()
+    updateFOV()
+
+    if currentTarget then
+        fovCircle.Color = getgenv().Aimbot.FOV.LockedColor
+        aimAt(currentTarget)
+    else
+        fovCircle.Color = getgenv().Aimbot.FOV.Color
+    end
+
+    if getgenv().Aimbot.WallhackEnabled then
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Character and isAlive(player) and player.Team ~= LocalPlayer.Team then
+                local part = player.Character:FindFirstChild(getgenv().Aimbot.LockPart)
+                if part then
+                    local dist = (part.Position - Camera.CFrame.Position).Magnitude
+                    if dist <= getgenv().Aimbot.WallhackMaxDistance then
+                        if not wallhackObjects[player] then
+                            wallhackObjects[player] = createWallhackESP(player)
+                        end
+
+                        local esp = wallhackObjects[player]
+                        local char = player.Character
+
+                        local hrp = char:FindFirstChild("HumanoidRootPart")
+                        local head = char:FindFirstChild("Head")
+                        local torso = char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso")
+
+                        if hrp and head and torso then
+                            local rootPos, onScreenRoot = Camera:WorldToViewportPoint(hrp.Position)
+                            local headPos, onScreenHead = Camera:WorldToViewportPoint(head.Position)
+                            local torsoPos, onScreenTorso = Camera:WorldToViewportPoint(torso.Position)
+
+                            if onScreenRoot and onScreenHead and onScreenTorso then
+                                local height = (headPos.Y - rootPos.Y) * -1
+                                local width = height / 2
+
+                                esp.box.Position = Vector2.new(rootPos.X - width / 2, rootPos.Y - height)
+                                esp.box.Size = Vector2.new(width, height)
+                                esp.box.Visible = true
+
+                                esp.name.Position = Vector2.new(rootPos.X, rootPos.Y - height - 15)
+                                esp.name.Visible = true
+
+                                local joints = {
+                                    head,
+                                    torso,
+                                    char:FindFirstChild("LeftUpperArm"),
+                                    char:FindFirstChild("RightUpperArm"),
+                                    char:FindFirstChild("LeftUpperLeg"),
+                                    char:FindFirstChild("RightUpperLeg"),
+                                }
+
+                                for i, part in ipairs(joints) do
+                                    local nextPart = joints[i + 1]
+                                    if part and nextPart then
+                                        local p1 = Camera:WorldToViewportPoint(part.Position)
+                                        local p2 = Camera:WorldToViewportPoint(nextPart.Position)
+                                        esp.skeleton[i].From = Vector2.new(p1.X, p1.Y)
+                                        esp.skeleton[i].To = Vector2.new(p2.X, p2.Y)
+                                        esp.skeleton[i].Visible = true
+                                    else
+                                        esp.skeleton[i].Visible = false
+                                    end
+                                end
+                            else
+                                esp.box.Visible = false
+                                esp.name.Visible = false
+                                for _, line in ipairs(esp.skeleton) do
+                                    line.Visible = false
+                                end
+                            end
+                        else
+                            esp.box.Visible = false
+                            esp.name.Visible = false
+                            for _, line in ipairs(esp.skeleton) do
+                                line.Visible = false
+                            end
+                        end
+                    else
+                        if wallhackObjects[player] then
+                            local esp = wallhackObjects[player]
+                            esp.box.Visible = false
+                            esp.name.Visible = false
+                            for _, line in ipairs(esp.skeleton) do
+                                line.Visible = false
+                            end
+                        end
                     end
                 end
-            else
-                if wallhackObjects[player] then
-                    wallhackObjects[player].box.Visible = false
-                    wallhackObjects[player].name.Visible = false
+            elseif wallhackObjects[player] then
+                local esp = wallhackObjects[player]
+                esp.box.Visible = false
+                esp.name.Visible = false
+                for _, line in ipairs(esp.skeleton) do
+                    line.Visible = false
                 end
             end
         end
-    end
-end
-
---==============================
--- SPEED MOD
---==============================
-
--- Atualiza a velocidade do jogador conforme multiplicador
-local function updateSpeed()
-    if getgenv().SpeedMod.Enabled then
-        LocalPlayer.Character.Humanoid.WalkSpeed = getgenv().SpeedMod.DefaultWalkSpeed * getgenv().SpeedMod.Multiplier
     else
-        LocalPlayer.Character.Humanoid.WalkSpeed = getgenv().SpeedMod.DefaultWalkSpeed
-    end
-end
-
--- Atualiza velocidade ao spawnar
-LocalPlayer.CharacterAdded:Connect(function(character)
-    character:WaitForChild("Humanoid").WalkSpeed = getgenv().SpeedMod.DefaultWalkSpeed
-    wait(0.1)
-    updateSpeed()
-end)
-
---==============================
--- MAIN LOOP
---==============================
-
-RunService.RenderStepped:Connect(function()
-    if ScreenGui.Enabled then
-        updateFOV()
-        updateWallhack()
-        updateSpeed()
-
-        if getgenv().Aimbot.Enabled and getgenv().Aimbot.Toggle then
-            local target = getClosestTarget()
-            aimAt(target)
+        for _, esp in pairs(wallhackObjects) do
+            esp.box.Visible = false
+            esp.name.Visible = false
+            for _, line in ipairs(esp.skeleton) do
+                line.Visible = false
+            end
         end
     end
 end)
 
---==============================
--- KEYBINDS
---==============================
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
-
-    if input.UserInputType == getgenv().Aimbot.TriggerKey then
-        getgenv().Aimbot.Toggle = true
-    end
-
-    if input.KeyCode == Enum.KeyCode.RightControl then
-        getgenv().Aimbot.Enabled = not getgenv().Aimbot.Enabled
-        print("Aimbot Enabled: ", getgenv().Aimbot.Enabled)
-    end
-end)
-
-UserInputService.InputEnded:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
-
-    if input.UserInputType == getgenv().Aimbot.TriggerKey then
-        getgenv().Aimbot.Toggle = false
+-- Salvar configurações ao fechar
+game:BindToClose(function()
+    if writefile then
+        writefile(configFile, HttpService:JSONEncode(getgenv().Aimbot))
     end
 end)
