@@ -1,5 +1,5 @@
 --==================================
--- AIMBOT V3 + SPEED MOD + WALLHACK
+-- AIMBOT V3 - GUI + SPEED MOD + WALLHACK CONFIGURÁVEL
 --==================================
 
 if game:GetService("StarterGui") then
@@ -44,25 +44,26 @@ getgenv().Aimbot = {
     WallhackMaxDistance = 500,
 }
 
--- Config Speed Mod (corrida rápida)
 getgenv().SpeedMod = {
     Enabled = false,
     DefaultWalkSpeed = 16,
-    Multiplier = 5 -- Multiplicador padrão (5x rápido)
+    Multiplier = 1,
 }
 
 -- Carregar configurações salvas
 local configFile = "aimbot_config.json"
 if readfile and isfile and isfile(configFile) then
     local data = HttpService:JSONDecode(readfile(configFile))
-    for k, v in pairs(data) do getgenv().Aimbot[k] = v end
+    if data.Aimbot then
+        for k, v in pairs(data.Aimbot) do getgenv().Aimbot[k] = v end
+    end
     if data.SpeedMod then
-        getgenv().SpeedMod = data.SpeedMod
+        for k, v in pairs(data.SpeedMod) do getgenv().SpeedMod[k] = v end
     end
 end
 
 --==============================
--- GUI (Interface)
+-- GUI
 --==============================
 
 local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
@@ -73,9 +74,18 @@ Frame.Size = UDim2.new(0, 300, 0, 450)
 Frame.Position = UDim2.new(0.02, 0, 0.15, 0)
 Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
 Frame.BorderSizePixel = 0
-Frame.AnchorPoint = Vector2.new(0, 0)
 Frame.Active = true
 Frame.Draggable = true
+
+local Shadow = Instance.new("ImageLabel", Frame)
+Shadow.Size = UDim2.new(1, 10, 1, 10)
+Shadow.Position = UDim2.new(0, -5, 0, -5)
+Shadow.BackgroundTransparency = 1
+Shadow.Image = "rbxassetid://3570695787"
+Shadow.ImageColor3 = Color3.new(0, 0, 0)
+Shadow.ImageTransparency = 0.7
+Shadow.ScaleType = Enum.ScaleType.Slice
+Shadow.SliceCenter = Rect.new(100, 100, 100, 100)
 
 local Title = Instance.new("TextLabel", Frame)
 Title.Size = UDim2.new(1, 0, 0, 40)
@@ -87,7 +97,6 @@ Title.TextSize = 28
 Title.TextStrokeTransparency = 0.8
 Title.TextScaled = true
 
--- Botões minimizar e fechar (igual no seu script original)
 local minimizeButton = Instance.new("TextButton", Frame)
 minimizeButton.Size = UDim2.new(0, 30, 0, 30)
 minimizeButton.Position = UDim2.new(1, -70, 0, 5)
@@ -129,8 +138,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- Funções para criar toggles e sliders, adaptadas para SpeedMod e Aimbot
-
+-- Funções para criar toggles e sliders
 local function createToggle(name, parent, initialValue, positionY, callback)
     local btnFrame = Instance.new("Frame", parent)
     btnFrame.Size = UDim2.new(1, -20, 0, 40)
@@ -174,24 +182,25 @@ local function createToggle(name, parent, initialValue, positionY, callback)
         callback(toggled)
     end)
 end
+
 local function createSlider(name, parent, min, max, default, positionY, callback)
     local sliderFrame = Instance.new("Frame", parent)
-    sliderFrame.Size = UDim2.new(1, -20, 0, 35) -- diminui altura de 50 para 35
+    sliderFrame.Size = UDim2.new(1, -20, 0, 35)
     sliderFrame.Position = UDim2.new(0, 10, 0, positionY)
     sliderFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
     sliderFrame.BorderSizePixel = 0
 
     local label = Instance.new("TextLabel", sliderFrame)
     label.Text = name .. ": " .. tostring(default)
-    label.Size = UDim2.new(1, 0, 0, 18) -- diminui altura do texto
+    label.Size = UDim2.new(1, 0, 0, 18)
     label.BackgroundTransparency = 1
     label.TextColor3 = Color3.fromRGB(220, 220, 220)
     label.Font = Enum.Font.Gotham
-    label.TextSize = 14 -- reduz um pouco o texto
+    label.TextSize = 14
     label.TextXAlignment = Enum.TextXAlignment.Left
 
     local slider = Instance.new("Frame", sliderFrame)
-    slider.Size = UDim2.new(1, -20, 0, 8) -- diminui altura do slider
+    slider.Size = UDim2.new(1, -20, 0, 8)
     slider.Position = UDim2.new(0, 10, 0, 20)
     slider.BackgroundColor3 = Color3.fromRGB(70, 70, 80)
     slider.BorderSizePixel = 0
@@ -231,7 +240,7 @@ local function createSlider(name, parent, min, max, default, positionY, callback
     end)
 end
 
--- Criar toggles do Aimbot
+-- Toggles do aimbot
 createToggle("Wallhack", Frame, getgenv().Aimbot.WallhackEnabled, 50, function(value)
     getgenv().Aimbot.WallhackEnabled = value
 end)
@@ -244,28 +253,20 @@ createToggle("Wall Check", Frame, getgenv().Aimbot.WallCheck, 150, function(valu
     getgenv().Aimbot.WallCheck = value
 end)
 
--- Toggle e slider para Speed Mod
-createToggle("Speed Mod", Frame, getgenv().SpeedMod.Enabled, 200, function(value)
-    getgenv().SpeedMod.Enabled = value
-end)
-
-createSlider("Speed Multiplier", Frame, 1, 20, getgenv().SpeedMod.Multiplier, 260, function(value)
-    getgenv().SpeedMod.Multiplier = value
-end)
-
--- Slider para Aimbot e Wallhack distâncias
-createSlider("Aimbot Max Distance", Frame, 50, 500, getgenv().Aimbot.MaxDistance, 320, function(value)
+-- Slider para aimbot MaxDistance
+createSlider("Aimbot Max Distance", Frame, 50, 500, getgenv().Aimbot.MaxDistance, 210, function(value)
     getgenv().Aimbot.MaxDistance = value
 end)
 
-createSlider("Wallhack Max Distance", Frame, 50, 1000, getgenv().Aimbot.WallhackMaxDistance, 380, function(value)
+-- Slider para Wallhack MaxDistance
+createSlider("Wallhack Max Distance", Frame, 50, 1000, getgenv().Aimbot.WallhackMaxDistance, 260, function(value)
     getgenv().Aimbot.WallhackMaxDistance = value
 end)
 
--- Botão de prioridade
+-- Prioridade FOV / Distância
 local priorityBtn = Instance.new("TextButton", Frame)
 priorityBtn.Size = UDim2.new(1, -20, 0, 40)
-priorityBtn.Position = UDim2.new(0, 10, 0, 440)
+priorityBtn.Position = UDim2.new(0, 10, 0, 310)
 priorityBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
 priorityBtn.BorderSizePixel = 0
 priorityBtn.TextColor3 = Color3.fromRGB(255, 180, 60)
@@ -279,6 +280,16 @@ priorityBtn.MouseButton1Click:Connect(function()
         getgenv().Aimbot.Priority = "FOV"
     end
     priorityBtn.Text = "Prioridade: " .. getgenv().Aimbot.Priority
+end)
+
+-- Speed Mod Toggle
+createToggle("Speed Mod", Frame, getgenv().SpeedMod.Enabled, 360, function(value)
+    getgenv().SpeedMod.Enabled = value
+end)
+
+-- Speed Multiplier Slider (1x até 50x ~ 750 WalkSpeed)
+createSlider("Speed Multiplier", Frame, 1, 50, getgenv().SpeedMod.Multiplier, 410, function(value)
+    getgenv().SpeedMod.Multiplier = value
 end)
 
 --==============================
@@ -295,7 +306,7 @@ local function updateFOV()
 end
 
 --==============================
--- FUNÇÕES DE MIRA E WALLHACK
+-- FUNÇÕES DE MIRA
 --==============================
 local function isAlive(player)
     local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
@@ -369,6 +380,9 @@ local function aimAt(target)
     Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(camPos, camPos + direction), getgenv().Aimbot.AimSpeed)
 end
 
+--==============================
+-- WALLHACK ESP (simplificado)
+--==============================
 local wallhackObjects = {}
 
 local function createWallhackESP(player)
@@ -400,72 +414,34 @@ local function createWallhackESP(player)
 end
 
 local function updateWallhack()
-    if not getgenv().Aimbot.WallhackEnabled then
-        for player, esp in pairs(wallhackObjects) do
-            esp.box.Visible = false
-            esp.name.Visible = false
-            for _, line in ipairs(esp.skeleton) do
-                line.Visible = false
-            end
-        end
-        return
-    end
-
     for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character and isAlive(player) and player.Team ~= LocalPlayer.Team then
+        if player ~= LocalPlayer and player.Character and isAlive(player) and (not getgenv().Aimbot.TeamCheck or player.Team ~= LocalPlayer.Team) then
             local part = player.Character:FindFirstChild(getgenv().Aimbot.LockPart)
-            if part then
-                local dist = (part.Position - Camera.CFrame.Position).Magnitude
-                if dist <= getgenv().Aimbot.WallhackMaxDistance then
+            if part and (player.Character.HumanoidRootPart.Position - Camera.CFrame.Position).Magnitude <= getgenv().Aimbot.WallhackMaxDistance then
+                local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
+                if onScreen then
                     if not wallhackObjects[player] then
                         wallhackObjects[player] = createWallhackESP(player)
                     end
-
                     local esp = wallhackObjects[player]
-                    local char = player.Character
+                    local size = 50 -- Ajuste do tamanho do box (pode melhorar calculo)
 
-                    local p1, visible1 = Camera:WorldToViewportPoint(char.HumanoidRootPart.Position + Vector3.new(-1, 3, 0))
-                    local p2, visible2 = Camera:WorldToViewportPoint(char.HumanoidRootPart.Position + Vector3.new(1, 3, 0))
-                    local p3, visible3 = Camera:WorldToViewportPoint(char.HumanoidRootPart.Position + Vector3.new(1, 0, 0))
-                    local p4, visible4 = Camera:WorldToViewportPoint(char.HumanoidRootPart.Position + Vector3.new(-1, 0, 0))
-                    local onScreen = visible1 and visible2 and visible3 and visible4
+                    esp.box.Size = size
+                    esp.box.Position = Vector2.new(screenPos.X - size/2, screenPos.Y - size/2)
+                    esp.box.Visible = getgenv().Aimbot.WallhackEnabled
 
-                    if onScreen then
-                        local pos1 = Vector2.new(p1.X, p1.Y)
-                        local pos2 = Vector2.new(p2.X, p2.Y)
-                        local pos3 = Vector2.new(p3.X, p3.Y)
-                        local pos4 = Vector2.new(p4.X, p4.Y)
-
-                        esp.box.Visible = true
-                        esp.box.Color = Color3.fromRGB(255, 0, 0)
-                        local width = (pos2 - pos1).Magnitude
-                        local height = (pos4 - pos1).Magnitude
-                        esp.box.Size = Vector2.new(width, height)
-                        esp.box.Position = pos1
-
-                        esp.name.Visible = true
-                        esp.name.Position = Vector2.new((pos1.X + pos2.X) / 2, pos1.Y - 15)
-                        esp.name.Text = player.Name
-
-                        for i, line in ipairs(esp.skeleton) do
-                            line.Visible = false -- simplificado, para não complicar aqui
-                        end
-                    else
-                        esp.box.Visible = false
-                        esp.name.Visible = false
-                        for _, line in ipairs(esp.skeleton) do
-                            line.Visible = false
-                        end
-                    end
+                    esp.name.Position = Vector2.new(screenPos.X, screenPos.Y - size/2 - 15)
+                    esp.name.Visible = getgenv().Aimbot.WallhackEnabled
                 else
                     if wallhackObjects[player] then
-                        local esp = wallhackObjects[player]
-                        esp.box.Visible = false
-                        esp.name.Visible = false
-                        for _, line in ipairs(esp.skeleton) do
-                            line.Visible = false
-                        end
+                        wallhackObjects[player].box.Visible = false
+                        wallhackObjects[player].name.Visible = false
                     end
+                end
+            else
+                if wallhackObjects[player] then
+                    wallhackObjects[player].box.Visible = false
+                    wallhackObjects[player].name.Visible = false
                 end
             end
         end
@@ -473,61 +449,62 @@ local function updateWallhack()
 end
 
 --==============================
--- SPEED MOD - Corrida rápida
+-- SPEED MOD
 --==============================
+
+-- Atualiza a velocidade do jogador conforme multiplicador
+local function updateSpeed()
+    if getgenv().SpeedMod.Enabled then
+        LocalPlayer.Character.Humanoid.WalkSpeed = getgenv().SpeedMod.DefaultWalkSpeed * getgenv().SpeedMod.Multiplier
+    else
+        LocalPlayer.Character.Humanoid.WalkSpeed = getgenv().SpeedMod.DefaultWalkSpeed
+    end
+end
+
+-- Atualiza velocidade ao spawnar
+LocalPlayer.CharacterAdded:Connect(function(character)
+    character:WaitForChild("Humanoid").WalkSpeed = getgenv().SpeedMod.DefaultWalkSpeed
+    wait(0.1)
+    updateSpeed()
+end)
+
+--==============================
+-- MAIN LOOP
+--==============================
+
 RunService.RenderStepped:Connect(function()
-    local character = LocalPlayer.Character
-    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-    if humanoid then
-        if getgenv().SpeedMod.Enabled then
-            humanoid.WalkSpeed = getgenv().SpeedMod.DefaultWalkSpeed * getgenv().SpeedMod.Multiplier
-        else
-            humanoid.WalkSpeed = getgenv().SpeedMod.DefaultWalkSpeed
+    if ScreenGui.Enabled then
+        updateFOV()
+        updateWallhack()
+        updateSpeed()
+
+        if getgenv().Aimbot.Enabled and getgenv().Aimbot.Toggle then
+            local target = getClosestTarget()
+            aimAt(target)
         end
     end
 end)
 
 --==============================
--- LOOP PRINCIPAL
+-- KEYBINDS
 --==============================
-RunService.RenderStepped:Connect(function()
-    updateFOV()
-    updateWallhack()
-
-    if getgenv().Aimbot.Enabled and getgenv().Aimbot.Toggle and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
-        local target = getClosestTarget()
-        aimAt(target)
-    end
-end)
-
--- Atalhos para ativar/desativar o aimbot
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
-    if input.UserInputType == Enum.UserInputType.MouseButton2 then
+
+    if input.UserInputType == getgenv().Aimbot.TriggerKey then
         getgenv().Aimbot.Toggle = true
-    elseif input.KeyCode == Enum.KeyCode.RightControl then
+    end
+
+    if input.KeyCode == Enum.KeyCode.RightControl then
         getgenv().Aimbot.Enabled = not getgenv().Aimbot.Enabled
+        print("Aimbot Enabled: ", getgenv().Aimbot.Enabled)
     end
 end)
 
 UserInputService.InputEnded:Connect(function(input, gameProcessed)
-    if input.UserInputType == Enum.UserInputType.MouseButton2 then
+    if gameProcessed then return end
+
+    if input.UserInputType == getgenv().Aimbot.TriggerKey then
         getgenv().Aimbot.Toggle = false
     end
 end)
-
--- Salvar configurações
-local function saveConfig()
-    local toSave = {
-        Aimbot = getgenv().Aimbot,
-        SpeedMod = getgenv().SpeedMod
-    }
-    if writefile then
-        writefile(configFile, HttpService:JSONEncode(toSave))
-    end
-end
-
--- Salvar automaticamente a cada 30s
-while task.wait(30) do
-    saveConfig()
-end
