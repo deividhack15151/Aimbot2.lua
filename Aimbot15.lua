@@ -80,12 +80,20 @@ end)
 local espObjects = {}
 
 RunService.RenderStepped:Connect(function()
-    for _, esp in pairs(espObjects) do
-        for _, obj in pairs(esp) do
-            if obj and obj.Remove then obj:Remove() end
+    for player, esp in pairs(espObjects) do
+        if not player:IsDescendantOf(Players) or not player.Character then
+            for _, obj in pairs(esp) do
+                if typeof(obj) == "table" then
+                    for _, line in ipairs(obj) do
+                        if line.Remove then line:Remove() end
+                    end
+                elseif obj.Remove then
+                    obj:Remove()
+                end
+            end
+            espObjects[player] = nil
         end
     end
-    espObjects = {}
 
     if not getgenv().Aimbot.Wallhack then return end
 
@@ -105,51 +113,55 @@ RunService.RenderStepped:Connect(function()
             local pos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
             if not onScreen then continue end
 
-            local esp = {}
+            if not espObjects[player] then
+                espObjects[player] = {
+                    box = Drawing.new("Square"),
+                    name = Drawing.new("Text"),
+                    distance = Drawing.new("Text"),
+                    hp = Drawing.new("Square"),
+                    skeleton = {},
+                }
+            end
 
-            local box = Drawing.new("Square")
-            box.Size = Vector2.new(50, 100)
-            box.Position = Vector2.new(pos.X - 25, pos.Y - 50)
-            box.Color = getgenv().Aimbot.ESPColor
-            box.Thickness = 1
-            box.Visible = true
-            esp.box = box
+            local esp = espObjects[player]
 
-            local name = Drawing.new("Text")
-            name.Text = player.Name
-            name.Position = Vector2.new(pos.X, pos.Y - 60)
-            name.Size = 14
-            name.Color = Color3.new(1, 1, 1)
-            name.Center = true
-            name.Outline = true
-            name.Visible = true
-            esp.name = name
+            esp.box.Size = Vector2.new(50, 100)
+            esp.box.Position = Vector2.new(pos.X - 25, pos.Y - 50)
+            esp.box.Color = getgenv().Aimbot.ESPColor
+            esp.box.Thickness = 1
+            esp.box.Visible = true
+
+            esp.name.Text = player.Name
+            esp.name.Position = Vector2.new(pos.X, pos.Y - 60)
+            esp.name.Size = 14
+            esp.name.Color = Color3.new(1, 1, 1)
+            esp.name.Center = true
+            esp.name.Outline = true
+            esp.name.Visible = true
 
             if getgenv().Aimbot.ShowDistance then
-                local distText = Drawing.new("Text")
-                distText.Text = math.floor(distance) .. "m"
-                distText.Position = Vector2.new(pos.X, pos.Y + 60)
-                distText.Size = 13
-                distText.Color = Color3.new(0.8, 0.8, 0.8)
-                distText.Center = true
-                distText.Visible = true
-                esp.distance = distText
+                esp.distance.Text = math.floor(distance) .. "m"
+                esp.distance.Position = Vector2.new(pos.X, pos.Y + 60)
+                esp.distance.Size = 13
+                esp.distance.Color = Color3.new(0.8, 0.8, 0.8)
+                esp.distance.Center = true
+                esp.distance.Visible = true
+            else
+                esp.distance.Visible = false
             end
 
             if getgenv().Aimbot.ShowHealthBar then
                 local health = humanoid.Health / humanoid.MaxHealth
-                local bar = Drawing.new("Square")
-                bar.Size = Vector2.new(3, 100 * health)
-                bar.Position = Vector2.new(pos.X - 30, pos.Y - 50 + (100 * (1 - health)))
-                bar.Color = Color3.fromRGB(0, 255, 0)
-                bar.Thickness = 1
-                bar.Filled = true
-                bar.Visible = true
-                esp.hp = bar
+                esp.hp.Size = Vector2.new(3, 100 * health)
+                esp.hp.Position = Vector2.new(pos.X - 30, pos.Y - 50 + (100 * (1 - health)))
+                esp.hp.Color = Color3.fromRGB(0, 255, 0)
+                esp.hp.Filled = true
+                esp.hp.Visible = true
+            else
+                esp.hp.Visible = false
             end
 
             if getgenv().Aimbot.ShowSkeleton then
-                esp.skeleton = {}
                 local joints = {
                     head,
                     char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso"),
@@ -160,20 +172,25 @@ RunService.RenderStepped:Connect(function()
                 }
                 for i = 1, #joints - 1 do
                     if joints[i] and joints[i + 1] then
+                        if not esp.skeleton[i] then
+                            esp.skeleton[i] = Drawing.new("Line")
+                        end
                         local p1 = Camera:WorldToViewportPoint(joints[i].Position)
                         local p2 = Camera:WorldToViewportPoint(joints[i + 1].Position)
-                        local line = Drawing.new("Line")
-                        line.From = Vector2.new(p1.X, p1.Y)
-                        line.To = Vector2.new(p2.X, p2.Y)
-                        line.Color = getgenv().Aimbot.ESPColor
-                        line.Thickness = 1
-                        line.Visible = true
-                        table.insert(esp.skeleton, line)
+                        esp.skeleton[i].From = Vector2.new(p1.X, p1.Y)
+                        esp.skeleton[i].To = Vector2.new(p2.X, p2.Y)
+                        esp.skeleton[i].Color = getgenv().Aimbot.ESPColor
+                        esp.skeleton[i].Thickness = 1
+                        esp.skeleton[i].Visible = true
+                    elseif esp.skeleton[i] then
+                        esp.skeleton[i].Visible = false
                     end
                 end
+            else
+                for _, line in ipairs(esp.skeleton) do
+                    line.Visible = false
+                end
             end
-
-            table.insert(espObjects, esp)
         end
     end
 end)
