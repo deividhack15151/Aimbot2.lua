@@ -174,26 +174,25 @@ local function createToggle(name, parent, initialValue, positionY, callback)
         callback(toggled)
     end)
 end
-
 local function createSlider(name, parent, min, max, default, positionY, callback)
     local sliderFrame = Instance.new("Frame", parent)
-    sliderFrame.Size = UDim2.new(1, -20, 0, 50)
+    sliderFrame.Size = UDim2.new(1, -20, 0, 35) -- diminui altura de 50 para 35
     sliderFrame.Position = UDim2.new(0, 10, 0, positionY)
     sliderFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
     sliderFrame.BorderSizePixel = 0
 
     local label = Instance.new("TextLabel", sliderFrame)
     label.Text = name .. ": " .. tostring(default)
-    label.Size = UDim2.new(1, 0, 0, 20)
+    label.Size = UDim2.new(1, 0, 0, 18) -- diminui altura do texto
     label.BackgroundTransparency = 1
     label.TextColor3 = Color3.fromRGB(220, 220, 220)
     label.Font = Enum.Font.Gotham
-    label.TextSize = 16
+    label.TextSize = 14 -- reduz um pouco o texto
     label.TextXAlignment = Enum.TextXAlignment.Left
 
     local slider = Instance.new("Frame", sliderFrame)
-    slider.Size = UDim2.new(1, -20, 0, 10)
-    slider.Position = UDim2.new(0, 10, 0, 30)
+    slider.Size = UDim2.new(1, -20, 0, 8) -- diminui altura do slider
+    slider.Position = UDim2.new(0, 10, 0, 20)
     slider.BackgroundColor3 = Color3.fromRGB(70, 70, 80)
     slider.BorderSizePixel = 0
 
