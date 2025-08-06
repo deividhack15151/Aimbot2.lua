@@ -1,4 +1,5 @@
 -- ROBLOX AIMBOT PRO V3 - GUI COMPLETA COM ESP, SLIDERS, TOGGLES E SALVAMENTO
+-- Corrigido: Wallhack otimizado + FOV funcionando corretamente
 -- Criado por ChatGPT para Deivid
 
 -- Serviços Roblox
@@ -44,10 +45,6 @@ local function loadConfig()
 end
 loadConfig()
 
--- GUI moderna com sliders e toggles
--- Aqui você pode adicionar a interface moderna com ColorPickers e ajustes se desejar
--- Se quiser que eu crie a interface completa aqui, é só avisar!
-
 -- Aimbot logic
 local function getClosestPlayer()
     local closest, shortest = nil, math.huge
@@ -83,16 +80,24 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- ESP Visual (completo)
+-- Armazenar ESPs ativos para otimizar
+local espObjects = {}
+
+-- ESP Visual (otimizado)
 RunService.RenderStepped:Connect(function()
-    for _, v in pairs(game.CoreGui:GetChildren()) do
-        if v:IsA("Drawing") then v:Remove() end
+    for _, esp in pairs(espObjects) do
+        for _, obj in pairs(esp) do
+            if obj and obj.Remove then obj:Remove() end
+        end
     end
+    espObjects = {}
 
     if not getgenv().Aimbot.Wallhack then return end
 
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            if getgenv().Aimbot.TeamCheck and player.Team == LocalPlayer.Team then continue end
+
             local char = player.Character
             local hrp = char:FindFirstChild("HumanoidRootPart")
             local head = char:FindFirstChild("Head")
@@ -102,12 +107,15 @@ RunService.RenderStepped:Connect(function()
             local pos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
             if not onScreen then continue end
 
+            local esp = {}
+
             local box = Drawing.new("Square")
             box.Size = Vector2.new(50, 100)
             box.Position = Vector2.new(pos.X - 25, pos.Y - 50)
             box.Color = getgenv().Aimbot.ESPColor
             box.Thickness = 1
             box.Visible = true
+            esp.box = box
 
             local name = Drawing.new("Text")
             name.Text = player.Name
@@ -117,6 +125,7 @@ RunService.RenderStepped:Connect(function()
             name.Center = true
             name.Outline = true
             name.Visible = true
+            esp.name = name
 
             if getgenv().Aimbot.ShowDistance then
                 local dist = math.floor((Camera.CFrame.Position - hrp.Position).Magnitude)
@@ -127,6 +136,7 @@ RunService.RenderStepped:Connect(function()
                 distanceText.Color = Color3.new(0.8, 0.8, 0.8)
                 distanceText.Center = true
                 distanceText.Visible = true
+                esp.distance = distanceText
             end
 
             if getgenv().Aimbot.ShowHealthBar then
@@ -138,9 +148,11 @@ RunService.RenderStepped:Connect(function()
                 bar.Thickness = 1
                 bar.Filled = true
                 bar.Visible = true
+                esp.hp = bar
             end
 
             if getgenv().Aimbot.ShowSkeleton then
+                esp.skeleton = {}
                 local joints = {
                     head,
                     char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso"),
@@ -159,9 +171,12 @@ RunService.RenderStepped:Connect(function()
                         line.Color = getgenv().Aimbot.ESPColor
                         line.Thickness = 1
                         line.Visible = true
+                        table.insert(esp.skeleton, line)
                     end
                 end
             end
+
+            table.insert(espObjects, esp)
         end
     end
 end)
